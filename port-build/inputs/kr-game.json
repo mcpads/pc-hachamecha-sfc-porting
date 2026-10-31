@@ -1,0 +1,1044 @@
+{
+  "schema": 1,
+  "id": "diskstation-kr-1-madou",
+  "scope": "Extracted KR game directory; full-disc image identity is not established here",
+  "files": [
+    {
+      "file": "3START.CNS",
+      "bytes": 35206,
+      "sha256": "58bb783cce9150b2ef23bbfa9bd61d33b33014a41985b0423e9525b365050e5a"
+    },
+    {
+      "file": "3_ANA1.CNS",
+      "bytes": 3602,
+      "sha256": "596be80934c62d225eed1e0456af6927cb6539c9d7acbac93bfcd09875b7cfa8"
+    },
+    {
+      "file": "5BUTTON.CNS",
+      "bytes": 1409,
+      "sha256": "5cefb7669de149a99c185f23f6c94a6230ac2a20adcd04d1f0201faf552835ed"
+    },
+    {
+      "file": "5_PLATE.CNS",
+      "bytes": 956,
+      "sha256": "06e93b09b712c6af37b180795a10849a0c91c78eac4c137aeb1585216f648a5f"
+    },
+    {
+      "file": "AKARUI.CNS",
+      "bytes": 7688,
+      "sha256": "46f91e84cb0113f7846bd7097f33485da92ca9684d16432d2c1bf8fb414b2740"
+    },
+    {
+      "file": "AKARUI_D.CNS",
+      "bytes": 23596,
+      "sha256": "ee948d6fd36f56ee6e1bfe9ac196f9b739273caa8a4c1a0c123d6369bae89de1"
+    },
+    {
+      "file": "ANAKABE.CNS",
+      "bytes": 3469,
+      "sha256": "8e6e2f62230a0de67e4c85002137a5a446b826b153c8fa4c45f68d38c6c34a59"
+    },
+    {
+      "file": "ANM.CNS",
+      "bytes": 41492,
+      "sha256": "722759176fd621a1b1a0a58d2f44007419c74e9e50662bd0a8dc232cc8aca8e3"
+    },
+    {
+      "file": "ANM_ATK.CNS",
+      "bytes": 27174,
+      "sha256": "63e8c1c8b8fb1444c829c6cd56874b470c4e5bd66f91904038550a55f1820170"
+    },
+    {
+      "file": "ANM_HEAL.CNS",
+      "bytes": 30904,
+      "sha256": "073be0f8282db667f956aa7b7dc92971de12be3ad7f78aec8ae5337d18ab5d8b"
+    },
+    {
+      "file": "ARCH_A.CNS",
+      "bytes": 31159,
+      "sha256": "32b17fa33475f59394ede9f1be8055ae53836f8c27d1e814a5fd947d3ebb22df"
+    },
+    {
+      "file": "ARCH_B.CNS",
+      "bytes": 29014,
+      "sha256": "25cebd9b0b58c11da7e28aba9c923d3ab37c9df5c9595ec789a4cf226d429c69"
+    },
+    {
+      "file": "ARCH_C.CNS",
+      "bytes": 19881,
+      "sha256": "461a13f24704d035af334dacf69d53feee32dc4b99518a3870aa7fc384a91be6"
+    },
+    {
+      "file": "ARCH_EF.CNS",
+      "bytes": 841,
+      "sha256": "1f1cc1a8471e9c4b762daf0f6f59ca31565222b42ae371db3d216b0484d1746b"
+    },
+    {
+      "file": "AR_KAGMI.CNS",
+      "bytes": 4515,
+      "sha256": "59ec334aec11ce4abfda337c36720d4a5c14d97b15689e7ff10618ae409c591c"
+    },
+    {
+      "file": "AT_EFEC2.CNS",
+      "bytes": 7514,
+      "sha256": "3598e39926235bf6c80f6b412851067ecb7751daa20765312ae31d00f48390a6"
+    },
+    {
+      "file": "AT_EFECT.CNS",
+      "bytes": 17098,
+      "sha256": "6867114ed5dcce3ca1558f398dad69a9f2384e0f659b9e84d99b406610f86372"
+    },
+    {
+      "file": "A_DEAD.CNS",
+      "bytes": 9854,
+      "sha256": "03555f810db3f0753c44743ad404ad375a3b64090b6ef1c13ee68af7cef43442"
+    },
+    {
+      "file": "BG1.CNS",
+      "bytes": 20432,
+      "sha256": "f59a30be2f5eac8768eabd69714272d12b0aadcf62f0f570e15dfcc0e5e52ed2"
+    },
+    {
+      "file": "BG1_ANA.CNS",
+      "bytes": 2427,
+      "sha256": "27a15a0cfd2d180d7d27a61f88bfa32fbf5afd04ecdd7d2008b29602aaca1ae8"
+    },
+    {
+      "file": "BG1_ANA2.CNS",
+      "bytes": 456,
+      "sha256": "5c0e000e1be71679c6279e67aba893281700f3d6444d68307201575da40628a0"
+    },
+    {
+      "file": "BG1_BG.CNS",
+      "bytes": 20276,
+      "sha256": "5a71952f035a9996226ffa9dad44bbd86e5119ad495e429ca5faf0cca4e02fdf"
+    },
+    {
+      "file": "BG2.CNS",
+      "bytes": 7704,
+      "sha256": "2824664fd4b843d5a837b4d0d148bd9ba41df69daeb8b4a2c7dd228ae9f5dd0b"
+    },
+    {
+      "file": "BG2_BG.CNS",
+      "bytes": 28539,
+      "sha256": "cc87e2300f1fa037d4edd079e26bfc60f1ffd831c323e779b6a55e63b38f3d4a"
+    },
+    {
+      "file": "BG31.CNS",
+      "bytes": 28084,
+      "sha256": "f3cf2c8d2ad98f8ec173ed773a2d2486482267a45dccc2f7637d6c48455b72d3"
+    },
+    {
+      "file": "BG32.CNS",
+      "bytes": 27981,
+      "sha256": "bff7ce55d8842a7a16aaf30acfef0a139c5cfda84c53b4d2ae4208f00bb40c46"
+    },
+    {
+      "file": "BG3_BG.CNS",
+      "bytes": 9697,
+      "sha256": "0eb084684769deb8c64706579c5fc77a42c8bab8b704c608b3a359b3c549b8d3"
+    },
+    {
+      "file": "BG3_BG2.CNS",
+      "bytes": 14724,
+      "sha256": "1c675f355c4b2cfcc94f4e938787449cfeb499a76046b2843e6d3c9022a7fea2"
+    },
+    {
+      "file": "BLUE_S.CNS",
+      "bytes": 11052,
+      "sha256": "c3a5f346bcf877573d1aa25fe420a9046ee51a78c7be1d91abb2e4901f474397"
+    },
+    {
+      "file": "BS_4.CNS",
+      "bytes": 410,
+      "sha256": "35be359257b6009cc2e13bea00faed1e93fbba091a8304992d1f24c21d722f1a"
+    },
+    {
+      "file": "BUTTON.CNS",
+      "bytes": 1350,
+      "sha256": "62172a6a47c53062bd465407b527c2308a6cd5338efcb5d3812bbd06f0471698"
+    },
+    {
+      "file": "CATAPULT.CNS",
+      "bytes": 1612,
+      "sha256": "d1a30c9796df89c498aec6a43b6e41563abfe7b35edd1cbed0f0eabbcebfcf37"
+    },
+    {
+      "file": "DEM_ARLE.CNS",
+      "bytes": 9766,
+      "sha256": "616a156a50f7b48be45570eec467f49e3f30d9b7386ffa59406a7d0ec90bfe23"
+    },
+    {
+      "file": "DEM_DPPL.CNS",
+      "bytes": 8296,
+      "sha256": "3fe13e629bac930a9137ec027a8578261cf65d6e0d054086ff339cdc49e7e59c"
+    },
+    {
+      "file": "DEM_KIKI.CNS",
+      "bytes": 6262,
+      "sha256": "ac28613d83f2073908b924bf7e250717da0503c2469c687f15915d213fcdceb0"
+    },
+    {
+      "file": "DEM_NAS2.CNS",
+      "bytes": 3058,
+      "sha256": "01eb74238b71824dfc9192ef48301f05fa0a3d83e4d7d459f8e6a2c0096bfbca"
+    },
+    {
+      "file": "DEM_NASU.CNS",
+      "bytes": 1798,
+      "sha256": "77d7b3806eba93aa1a29b1fa174da8b679d9fa5eb669b2da1bc40e389ee718b3"
+    },
+    {
+      "file": "DEM_OWL.CNS",
+      "bytes": 2885,
+      "sha256": "f78eeab4ae0cd9c5fdea4e1a6c02911eb922bd261d52f03c9f829f8255eae4ed"
+    },
+    {
+      "file": "DEM_PANO.CNS",
+      "bytes": 2965,
+      "sha256": "09a55382059b4b232cc983fefe3b03b71758ed5f9209d74042e1f6398d8a0e41"
+    },
+    {
+      "file": "DEM_SATN.CNS",
+      "bytes": 7783,
+      "sha256": "9a3cfebe056c77139937ca1ba2b4c860582901969366a695f164fe6de9119bd7"
+    },
+    {
+      "file": "DEM_SCRP.CNS",
+      "bytes": 2783,
+      "sha256": "baa41a58e918c1cdab9b16a5c1d8f20c33ce9f7eed598cd0898bf18eb03eebea"
+    },
+    {
+      "file": "DEM_SHCZ.CNS",
+      "bytes": 6818,
+      "sha256": "d9135bfc826959821f574a40982d74e95d96f5ead41bf6a593020bf212dcf932"
+    },
+    {
+      "file": "DEM_TARA.CNS",
+      "bytes": 3057,
+      "sha256": "751f518b5c892f8100ae4c9d4c9fd481ce6894337b0f7bfe68a6c851b09e9b73"
+    },
+    {
+      "file": "DEM_TURU.CNS",
+      "bytes": 8066,
+      "sha256": "4b3df3c992ebf07242e7491c3f810137ef4cb3ec51bd09b5f082d189516f6195"
+    },
+    {
+      "file": "DOKU.CNS",
+      "bytes": 2208,
+      "sha256": "c555487ffd46feea265558fc741fa75fe5e340af5bb463ab5e5867fc63bdf2fc"
+    },
+    {
+      "file": "DOOR1.CNS",
+      "bytes": 26557,
+      "sha256": "4dcabe6d1342fe94980b06aa3f016e1c894cd9cfab84ea002424dd6f44ee5dab"
+    },
+    {
+      "file": "DOOR2.CNS",
+      "bytes": 27467,
+      "sha256": "01dddb2a3fc6be43f9224722decb0a0b12054b7266b414a4513a32bbe26d4379"
+    },
+    {
+      "file": "DOOR3.CNS",
+      "bytes": 24031,
+      "sha256": "54fcce2fe476a7b1fd0738bc68aab2a7a2a21f8e41c0db372e8781598ea6d6f0"
+    },
+    {
+      "file": "DOOR31.CNS",
+      "bytes": 31487,
+      "sha256": "2464d4e47edea2b6748112bf6b931191f19337b899317f18b246bf88917bb33e"
+    },
+    {
+      "file": "DOOR32.CNS",
+      "bytes": 30872,
+      "sha256": "e0d0042cdd5483792056815053ded58bbb49645759d05d5c0e2da1a579306ebd"
+    },
+    {
+      "file": "DOOR_F.CNS",
+      "bytes": 44165,
+      "sha256": "2e29635fc0462f94bdef6fd40d7b523b39fd8cec65a94e70dd26c6f7db62ec77"
+    },
+    {
+      "file": "DOPPER1.CNS",
+      "bytes": 30281,
+      "sha256": "3dd916628b5e5ea6637042b5064edc4421b275f387785c4e047a2ea0660a0f5f"
+    },
+    {
+      "file": "DOPPER2.CNS",
+      "bytes": 27282,
+      "sha256": "78178cf7be46c4b46e3310d931b447e4f052614569a20b97e764ffe5c792b04a"
+    },
+    {
+      "file": "DOPPER3.CNS",
+      "bytes": 23859,
+      "sha256": "d7d523731863e7e10c51325ec2af3f37b209485928aaab010aaf2a73d4e4cdaa"
+    },
+    {
+      "file": "DORBORO.CNS",
+      "bytes": 34053,
+      "sha256": "c40499f8b7ae672390b027cf6978603fb6304ea6709c68a3669743d5b8893f69"
+    },
+    {
+      "file": "DOWN.CNS",
+      "bytes": 17313,
+      "sha256": "13c69d746008736ca9216443b98f37af1a3c16502b94508991f16723f33966ac"
+    },
+    {
+      "file": "DP_KAGMI.CNS",
+      "bytes": 4550,
+      "sha256": "173196350dfdbeae8c0d949c991a1a0a11aedca950f871d01167839a161670c0"
+    },
+    {
+      "file": "DRAC.CNS",
+      "bytes": 17114,
+      "sha256": "e5d1c2b3eb7c394d91857fb5d4211a3aa84d26f7f4605a140532f5946998448d"
+    },
+    {
+      "file": "DRAC_ATK.CNS",
+      "bytes": 25363,
+      "sha256": "94d98d30a6c23feb40759e9cd17e14c7af591341c2a0b5dda7e06e3bb8c5f582"
+    },
+    {
+      "file": "ED1.CNS",
+      "bytes": 41866,
+      "sha256": "9831fa72734082166992b75f7ecd8e99f1f0eafd12f15dcfe05e28b9f6918d77"
+    },
+    {
+      "file": "ED1_ME.CNS",
+      "bytes": 8843,
+      "sha256": "9c18e130be1997f411da1b90515519d61dff7498e22301ba125377ee4bbdc8ac"
+    },
+    {
+      "file": "ED2.CNS",
+      "bytes": 87724,
+      "sha256": "98e96e015805ff4dc41c75f2fbc441e1cf1641e10c5d2b4fb314f8370bd0830d"
+    },
+    {
+      "file": "ED3_BG.CNS",
+      "bytes": 420,
+      "sha256": "1bdf33c8ce31dfa7ad3ab442b3f03e97fc26d6e1b8bc02dd7d8eac4bd4a447a8"
+    },
+    {
+      "file": "ED3_BLUE.CNS",
+      "bytes": 1901,
+      "sha256": "1460b09f19598006296337f6da1916802176857b3fab8fad0f31cf67c9ea3f61"
+    },
+    {
+      "file": "ED3_FX.CNS",
+      "bytes": 201,
+      "sha256": "e7c58a6484ddca9a0c4e0c4bc1f6d32d3fa1313167e6f7a3eb7d43f11f44fcee"
+    },
+    {
+      "file": "ED3_GREE.CNS",
+      "bytes": 2093,
+      "sha256": "f8361a9f3a499a05e0d238f02f0cbf2a99544df93581f9232967fa70675d444b"
+    },
+    {
+      "file": "ED3_JG1.CNS",
+      "bytes": 4165,
+      "sha256": "411552d72c2ea06087f5272dc2247197257e2e87d3083bbd5cb7e738dea54c79"
+    },
+    {
+      "file": "ED3_JG2.CNS",
+      "bytes": 5009,
+      "sha256": "49a18e89b3d8358923de8a8c6d00feec2f2587b2f92e0c83476013ddd185df94"
+    },
+    {
+      "file": "ED3_JG3.CNS",
+      "bytes": 3953,
+      "sha256": "d575209913a6fcce91859cedc1487836dfea5a28ad14dd4a9878eef96545b440"
+    },
+    {
+      "file": "ED3_JG4.CNS",
+      "bytes": 3538,
+      "sha256": "18211ae943b3bf255edff4ad3a84dfbbc8da87029f64323b2c28d237565cbdb8"
+    },
+    {
+      "file": "ED3_LB.CNS",
+      "bytes": 21946,
+      "sha256": "eafce5910b5a459144a25520e9e9969f829da179ab673579815ff7dd33b10c9c"
+    },
+    {
+      "file": "ED3_RED.CNS",
+      "bytes": 2197,
+      "sha256": "5a0bf26d044036e3d1ff9f5d3c99c1d716126b9f4c2911d23c45ab4e606a5645"
+    },
+    {
+      "file": "ED3_YERR.CNS",
+      "bytes": 1782,
+      "sha256": "f490986d505eab6a237e3b1d2496e33dfbd4ccf6e2221adb280ab18a268e1280"
+    },
+    {
+      "file": "ED_DAIZA.CNS",
+      "bytes": 2547,
+      "sha256": "aeb57be1914db25dba53db03c0e6bde0bcd13387c9484c0005df7e845e8c0b3c"
+    },
+    {
+      "file": "ED_ORB.CNS",
+      "bytes": 4869,
+      "sha256": "e54c830ee6c9b0b99025cc8dbfb0f3c0b4c97aa170b30dd2156fd0673120a514"
+    },
+    {
+      "file": "EFECT.CNS",
+      "bytes": 14803,
+      "sha256": "53dc772d7f8f06c7077f3c5591d90c2a9f6d85b147f7ed6e08fcc2b7207198c7"
+    },
+    {
+      "file": "EF_DAM.CNS",
+      "bytes": 4773,
+      "sha256": "dc60600dcde3752c87416125e94eea52f5e4362f63b3da10bccb6388493a8f94"
+    },
+    {
+      "file": "FACE.CNS",
+      "bytes": 16379,
+      "sha256": "4f71e580d9468658d4abd4e02891976385b7647b3897d25a63c09fb79777b46d"
+    },
+    {
+      "file": "FIREWALL.CNS",
+      "bytes": 1184,
+      "sha256": "cd803967870c25669d9fcc2924719b05abe849eaaa317f29cd0a27068b59ff3d"
+    },
+    {
+      "file": "FRAME.CNS",
+      "bytes": 63071,
+      "sha256": "3c0d6d375b4871207d47e388a048cc3ee7a1155e1c521719ec892fea4684df57"
+    },
+    {
+      "file": "FUFUFU.CNS",
+      "bytes": 2400,
+      "sha256": "8b2b1381bd514829fd1381b01392ef235dce6bf9c957ae9000ef0c542c9f008d"
+    },
+    {
+      "file": "GE_4.CNS",
+      "bytes": 374,
+      "sha256": "aa906a8f749716f2556551dd0d1f63839f8f5ca3785d4dbec55a3542b65276eb"
+    },
+    {
+      "file": "GREEN_E.CNS",
+      "bytes": 16635,
+      "sha256": "1c2a68c21b829730b0b3043957d2622af7844b1bfa860b31328abbc3080685ba"
+    },
+    {
+      "file": "GURUDOR2.CNS",
+      "bytes": 23421,
+      "sha256": "924214f51750bf72d7c6b6f3b7292415751896ca119837ae0a62a82d00a4670e"
+    },
+    {
+      "file": "GURUDOR3.CNS",
+      "bytes": 5462,
+      "sha256": "2d729b9f7313fdae9202fcaae11be97071902ff8e74808ca7aebdfebb127de28"
+    },
+    {
+      "file": "GW.CNS",
+      "bytes": 6640,
+      "sha256": "70e984ee46e83af5a93a43c5a7a97e25596edd2094ab052cb687d06e6cfa1d17"
+    },
+    {
+      "file": "HARPY.CNS",
+      "bytes": 36984,
+      "sha256": "abaa69101ce367e87f67ee9adfd353a409706d4e5011a9cdee487736671c3196"
+    },
+    {
+      "file": "HARPY2.CNS",
+      "bytes": 32512,
+      "sha256": "d7045ed0df3552aa74e660c7e961f37a6c93c08ea8dfe8309142d302de40a813"
+    },
+    {
+      "file": "HARPY3.CNS",
+      "bytes": 2177,
+      "sha256": "3bb641de7ef24a7cec31b51d0b3dd019965b8e17391b1f70b7bef8e938fddf03"
+    },
+    {
+      "file": "HIKARI.CNS",
+      "bytes": 337,
+      "sha256": "d521dc253856b91fd3794cd05ffc2e98665be1ad5e5cb9d74890ef5a9a7ffc38"
+    },
+    {
+      "file": "HIKARI_D.CNS",
+      "bytes": 2433,
+      "sha256": "7d3da3de19b30f87b4cc6209e7142ac5cc0b37bf044933c26802b076a0cfbb80"
+    },
+    {
+      "file": "H_CLOATH.CNS",
+      "bytes": 2202,
+      "sha256": "6afdce9ae17e213807f3b8f0e2e70ce178a58efb1a6c83703d70bff239391f9d"
+    },
+    {
+      "file": "ICEWALL.CNS",
+      "bytes": 6351,
+      "sha256": "717d3fe4be0664f4f2b9c44649d986e3373722d7fc4db638611e97297c778284"
+    },
+    {
+      "file": "ICN.CNS",
+      "bytes": 7212,
+      "sha256": "8d958a964677f15a37c2595e323218eb1ac6b5d2ec785983ebd1564d12958d47"
+    },
+    {
+      "file": "ICN_ITE2.CNS",
+      "bytes": 446,
+      "sha256": "a2ded595771e518b44012b2e7038b063f3f75791a126c3e6e1e909f89d9c71db"
+    },
+    {
+      "file": "ICN_ITEM.CNS",
+      "bytes": 3940,
+      "sha256": "2102e6d2625c704740aa0349144179b35931395c88f578b0ad3abc589e4ce239"
+    },
+    {
+      "file": "ICN_MAGI.CNS",
+      "bytes": 210,
+      "sha256": "0c27ce076573953eb940cf5c2e185994c0af8f0efc76f78b8ec504e6dbfa84f9"
+    },
+    {
+      "file": "ITEMS.CNS",
+      "bytes": 24765,
+      "sha256": "a8e706c39ace25a9ad1e0ee3b64db8955e51cd68d36d35d54afa8c1d37ba2b11"
+    },
+    {
+      "file": "IZUMI2.CNS",
+      "bytes": 6062,
+      "sha256": "c3011032ea3183e1ac8f17d659511af1d4c14cf84334a64688abdbfcdc41bbf8"
+    },
+    {
+      "file": "JE_BLUE.CNS",
+      "bytes": 32124,
+      "sha256": "af9f0f4b1db9106d26eb224ce3c1bc7dc3850b208c2fcad6c39f6fc1cc8b95ae"
+    },
+    {
+      "file": "JE_GREEN.CNS",
+      "bytes": 32092,
+      "sha256": "661999c0ba2c09429a628c7d94651a2bed8407bc065b3e7f5d7eb89b36312ac8"
+    },
+    {
+      "file": "JE_RED.CNS",
+      "bytes": 32122,
+      "sha256": "6dc06f0f2d53cce5bff6d8bb5092f2d4d758702898d1d3bf543506ffc2aa05ef"
+    },
+    {
+      "file": "JE_YELLO.CNS",
+      "bytes": 32125,
+      "sha256": "fda964030810955fe8ca83ea74fb8b9522aad56803af1b02e92231f0f9576816"
+    },
+    {
+      "file": "JISHAKU.CNS",
+      "bytes": 10762,
+      "sha256": "adfa57c71004d03902ad81b3c742a32d77bc508f3cc85a28d0dc12714a2f7586"
+    },
+    {
+      "file": "JSTORM.CNS",
+      "bytes": 3138,
+      "sha256": "5cb952b2e5bc2bd1965232038b28a24e50786d26a77e84912db0adb9a5a1b582"
+    },
+    {
+      "file": "JYUGEM_D.CNS",
+      "bytes": 32851,
+      "sha256": "a7373824e5654b180b7c885c90b199ab776e3559aa0dafda1902695006f84dd5"
+    },
+    {
+      "file": "J_THUN.CNS",
+      "bytes": 3225,
+      "sha256": "43db7097e3ef94749a5f3f947e314c18793c8746b49a8bade8efe064503d3bca"
+    },
+    {
+      "file": "KAGAMI.CNS",
+      "bytes": 16940,
+      "sha256": "515fe5ab6f372849355765fddbcabf1e8ff1d352ec76913d6293868e100f94af"
+    },
+    {
+      "file": "KAGAMI3.CNS",
+      "bytes": 7049,
+      "sha256": "d2ac00275e0ec2f909e763716e5e567b01eaf3d6f29cb48267d4d89868c8f044"
+    },
+    {
+      "file": "KAITEN_L.CNS",
+      "bytes": 30611,
+      "sha256": "a996f6195330f6d6cd0e0f2d627a0cd1310b584c3b6fd368cc1c725db7b41482"
+    },
+    {
+      "file": "KAITEN_R.CNS",
+      "bytes": 30712,
+      "sha256": "7a07c85934d2f4e5109a93fa74545dd0939789e2f9df7535a6af1123c060e67f"
+    },
+    {
+      "file": "KAO_2.CNS",
+      "bytes": 10948,
+      "sha256": "a7cdb58be66f9af06471873ccce60de8f5e3c468179152a8b89c0d89721281a6"
+    },
+    {
+      "file": "KAO_BG1.CNS",
+      "bytes": 2798,
+      "sha256": "f0a08d1df91f93a6ba2959244a4a2541ed70eed5aa11a08305de6e390c3d4962"
+    },
+    {
+      "file": "KAO_BG2.CNS",
+      "bytes": 3673,
+      "sha256": "31d8683da9ba64108e061e4fbeef145fe0b55700597902c938dfa273eef0e5fc"
+    },
+    {
+      "file": "KAO_BG3.CNS",
+      "bytes": 1873,
+      "sha256": "0127cee00ff6578b9d0db550f5b4d28d5aba01fa32865a1935c4b47599d0e2e2"
+    },
+    {
+      "file": "KAO_BG4.CNS",
+      "bytes": 1160,
+      "sha256": "67fd3bd4c1fd6246812e158b654fb67a6589c011e3a3f04b11b28e340b187dfb"
+    },
+    {
+      "file": "KAO_BG5.CNS",
+      "bytes": 3924,
+      "sha256": "7676f1bc54f6c018b5b5d54494143f4b49f9bbdff187b0c3999150c0fdf504c4"
+    },
+    {
+      "file": "KAR.CNS",
+      "bytes": 14413,
+      "sha256": "9dd53c39acf23cdad56dfe2f02ab02bd5b99a30d1eea68313ec8b0c8f5f20a6b"
+    },
+    {
+      "file": "KAR2.CNS",
+      "bytes": 12976,
+      "sha256": "b5cff9be9f315e9fe3cd219e41407571e65eff9606aeeb184fd685b0b0c220d3"
+    },
+    {
+      "file": "KAR_UP.CNS",
+      "bytes": 7952,
+      "sha256": "91a7b49cf75c2c6a4cbe8879041018a33cc9d8493ca141ed23025d88c6019ef2"
+    },
+    {
+      "file": "KEKKAI2.CNS",
+      "bytes": 6058,
+      "sha256": "153c9968dc2a67bbf713446d0a83bee554c00161b7f157804499f0e8799efe62"
+    },
+    {
+      "file": "KEMURI.CNS",
+      "bytes": 1553,
+      "sha256": "e1967c51168c800e823254b063ed507f63919ab14c049424b1f040c5e7892ad0"
+    },
+    {
+      "file": "LAMP.CNS",
+      "bytes": 320,
+      "sha256": "5bfa8a06b316bcb5338b044a54fd5f7c498f5a5bcb720387190b9a9cc85b2a7f"
+    },
+    {
+      "file": "LASTBOS2.CNS",
+      "bytes": 2546,
+      "sha256": "94cd98a2bf1784eadb66ec2f425c931b2c868fae59fd92b8bf34be2511fdc2a9"
+    },
+    {
+      "file": "LASTBOSS.CNS",
+      "bytes": 32886,
+      "sha256": "c5db77ef23bc4c93e9d0cd004add4d3741e8065dd4372d8741764ea2dd686642"
+    },
+    {
+      "file": "LB_2.CNS",
+      "bytes": 6744,
+      "sha256": "e2168330d0e5148a6297105e08ab2b8e11ffcfbb1c8b1b2c1eeef48e5e5cd643"
+    },
+    {
+      "file": "LB_BARIA.CNS",
+      "bytes": 11135,
+      "sha256": "9177933814069422b049e0d5ad96c451dac1d5998b84098412fa7a742bfc598b"
+    },
+    {
+      "file": "LB_EF.CNS",
+      "bytes": 25520,
+      "sha256": "48a19571a2c307de9c1368d8028c3508141610e00b4e643c2ab72c44ee9a4ae2"
+    },
+    {
+      "file": "LDOOL.CNS",
+      "bytes": 18108,
+      "sha256": "841a8175fad245e8452ebfe4eab933d7696b7553e05484e6ce88b27fbf865448"
+    },
+    {
+      "file": "LEVER.CNS",
+      "bytes": 801,
+      "sha256": "deeaae177dd26cf92210c48b1e58808f0568013afe8a22c6dc99dec99de4555d"
+    },
+    {
+      "file": "LOGO.CNS",
+      "bytes": 66675,
+      "sha256": "d84664435d81c2c482321dcb09ab21e09e7f29969f9c73307da64fbc4146db08"
+    },
+    {
+      "file": "LP_HI.CNS",
+      "bytes": 2302,
+      "sha256": "07f17fc723e16f22f72614187f5ce2377589047ddcc2d130147b8cd6c60c4387"
+    },
+    {
+      "file": "LU_DEMO.CNS",
+      "bytes": 11883,
+      "sha256": "bb3ebe068f82fa2dde9d860db2ecd67c799beebbad4a2fded90892f10f13a541"
+    },
+    {
+      "file": "LYDIA.CNS",
+      "bytes": 1567,
+      "sha256": "61bd686149dcd9a7c084d3a1f24fb1defe26b1cbe1b5e6aff788568017f07148"
+    },
+    {
+      "file": "L_POOR.CNS",
+      "bytes": 13981,
+      "sha256": "f19d5c3f9adea303490ebc7f155a5d4cb8e0b67b40a2154ef1204ccfe595fac3"
+    },
+    {
+      "file": "MADO1.EXE",
+      "bytes": 847875,
+      "sha256": "0805df715b161aa015b9fa71551559fc1652a520487e0d9a02b9e2618a16d308",
+      "alternatives": [
+        {
+          "file": "MADO.EXE",
+          "bytes": 843264,
+          "sha256": "f5985723f2912287d05af933ef5d7b96ea158b4a87fc5d722713f9eb98f7121a"
+        }
+      ]
+    },
+    {
+      "file": "MADOUSYO.CNS",
+      "bytes": 339,
+      "sha256": "c4d2453e4ac00f20fc87eb00223f47002e3afca9dd1d1d09aa58a6a9f2b7d84d"
+    },
+    {
+      "file": "MAHOUJIN.CNS",
+      "bytes": 1068,
+      "sha256": "b778a3e20c70910ef655be9c66c1d1419c4c57c91b620b49f7834c40b0824e15"
+    },
+    {
+      "file": "MAMONO.CNS",
+      "bytes": 39879,
+      "sha256": "ca187f51a7844db45799a473c28749c15a27cd2560e36dfab47783a900debf3b"
+    },
+    {
+      "file": "MAPMINI.CNS",
+      "bytes": 12125,
+      "sha256": "82f0a595a3edfb43fa0966e0c820b90273b5f0608f78afff425d9b3816e415c6"
+    },
+    {
+      "file": "MAPPARTS.CNS",
+      "bytes": 1139,
+      "sha256": "db0aa6780608868ab97d5f834d95e52ef3e095a9acffcfcfc9abb17fde6ebe9c"
+    },
+    {
+      "file": "MA_PLA.CNS",
+      "bytes": 4666,
+      "sha256": "040f8f288e7b9e6c8c9a6632b2f1815d866828975f1a88a5fb2f6a8d2162c3bb"
+    },
+    {
+      "file": "MIDDATA.MLK",
+      "bytes": 193895,
+      "sha256": "256df7f472c5032df293e2b7e434b8ca3c79539799910af547588373d71eb6eb"
+    },
+    {
+      "file": "MINO_D.CNS",
+      "bytes": 6154,
+      "sha256": "867fa5bb812a0fcaec431cf8c1ae5dd9ccd3c5c0cd7f3320d9329fca4173ef7e"
+    },
+    {
+      "file": "MOMOMO.CNS",
+      "bytes": 2287,
+      "sha256": "dde9578e538b436b7638bbccb4996bf232f02024d316e7f83f8035f84d9916c6"
+    },
+    {
+      "file": "MONSYOU.CNS",
+      "bytes": 33158,
+      "sha256": "9ff1469038ecb8595ed3c12180529ee7345de5aeac40908a89932b433620e3e4"
+    },
+    {
+      "file": "MOUSE.CNS",
+      "bytes": 6754,
+      "sha256": "4f5bc3213ebef388cc33980aa2859ac58a122eac8494043688b827960f13159c"
+    },
+    {
+      "file": "NUMBER.CNS",
+      "bytes": 224,
+      "sha256": "0f6c06908f197df80b2b6fb6bedf0f24de675f596d72f2e80709ecb81d965703"
+    },
+    {
+      "file": "NUMBER_P.CNS",
+      "bytes": 1292,
+      "sha256": "7ab87f5e1fb2d071c3410acfdeea4ecac543f78dabfa615a1286db1dc55b1b21"
+    },
+    {
+      "file": "OPBG1_1.CNS",
+      "bytes": 102530,
+      "sha256": "e71d6b0370a781cfbd80d56c948e241b2111e6cf473df18a05a279c759629617"
+    },
+    {
+      "file": "OPBG1_2.CNS",
+      "bytes": 103542,
+      "sha256": "6fc4065f4e3edf129753028af82c2eeebd5050100571910eb583c66dcaf37baf"
+    },
+    {
+      "file": "OPBG2.CNS",
+      "bytes": 167406,
+      "sha256": "0dadc711a878212476146f5953bc7ab784708f285a72078684f8d7efd23ca92d"
+    },
+    {
+      "file": "OWLBEAR.CNS",
+      "bytes": 42706,
+      "sha256": "2f6757667fb56c3695efaed1410c573e726efee5172a6d36bd2a0150fadb804b"
+    },
+    {
+      "file": "PAKISUTA.CNS",
+      "bytes": 1760,
+      "sha256": "bebcd897157759553e32434dadfd73ee4e9821f851188f36ce9382c86c2a996a"
+    },
+    {
+      "file": "PCMDATA.WLK",
+      "bytes": 715455,
+      "sha256": "37d020754c7c02d76889ce7829c7cda21764f60d8e2bd278326324618e003dd3"
+    },
+    {
+      "file": "PLATE.CNS",
+      "bytes": 398,
+      "sha256": "65cde39c9e897ad32de3e03969d036d3e9a62290e037df76b8a14e550a35ca9b"
+    },
+    {
+      "file": "PLATE3.CNS",
+      "bytes": 295,
+      "sha256": "3e30f42666213860ab29428de65b5b2899ba9cba85528a20889bc02977fea45e"
+    },
+    {
+      "file": "PRISM.CNS",
+      "bytes": 2721,
+      "sha256": "9db838fad21e0385b931dafcacb2c1621716862dc7e60f54ed59b9d3b934cef6"
+    },
+    {
+      "file": "PUYO.CNS",
+      "bytes": 11946,
+      "sha256": "1e577141f8925df54616e205e04807cc353f8ffb641d7b2f3360b6e8a96e8982"
+    },
+    {
+      "file": "PUYODOOR.CNS",
+      "bytes": 26259,
+      "sha256": "3051954723e0d84ccf3237d94d1b0c24242250dd9a5ed43629921073fae6cf66"
+    },
+    {
+      "file": "PUYODOR2.CNS",
+      "bytes": 867,
+      "sha256": "8807d5d6214adbebb119237764858045d605fe7a118ae6286d5c97a6185407e9"
+    },
+    {
+      "file": "PUYOKABE.CNS",
+      "bytes": 3982,
+      "sha256": "909a17bfa72222851f8df43a7d62bbed2f74798cf950d079de572cf4143e5f45"
+    },
+    {
+      "file": "PUYO_BG.CNS",
+      "bytes": 776,
+      "sha256": "d4708278e7887065267b7edcb8b4e135954f2e9ecb764a0f2ce87808c0358eb2"
+    },
+    {
+      "file": "P_KAKERA.CNS",
+      "bytes": 837,
+      "sha256": "ca5d858bb9ce2585e9e29cebb77c10546b5237e22290089bd01bee5814777dfa"
+    },
+    {
+      "file": "RED_R.CNS",
+      "bytes": 11724,
+      "sha256": "1a8194d0430fc01b146e5447c7eadac07cfad16bb51360a3582e073c8a15cd1c"
+    },
+    {
+      "file": "RELIEF2.CNS",
+      "bytes": 3390,
+      "sha256": "7758bc486b1ba63eb83b772a9bfd9e59458a361357b3d9b5486dda16e92c5e6e"
+    },
+    {
+      "file": "RR_4.CNS",
+      "bytes": 382,
+      "sha256": "d3f282b5624a9e8fab0c412705fe1e072de9db4b39c6b23c9a460c34d04b429e"
+    },
+    {
+      "file": "RULUE.CNS",
+      "bytes": 70485,
+      "sha256": "b80abab1eb2cff4317ecf5ff0e13eb1c98359f4d6a743f81cb1209e34d6e989e"
+    },
+    {
+      "file": "RULUE_A.CNS",
+      "bytes": 5881,
+      "sha256": "ecd4b590a324e5e8cbd15bed1a7aa26c8241fcca8af039c799ec8742deb91c12"
+    },
+    {
+      "file": "SAIDAN.CNS",
+      "bytes": 2061,
+      "sha256": "5ede2c505b7b11807b86ef43d67d993732d785fdf29485ab130676b1d6cadb85"
+    },
+    {
+      "file": "SATAN.CNS",
+      "bytes": 44555,
+      "sha256": "e8c60a09b34554ebd25f2c81e1310f516cab53550c50f3839225204018599819"
+    },
+    {
+      "file": "SCHEZO1.CNS",
+      "bytes": 47878,
+      "sha256": "60f0051d5e2f172d8fd1ef97498dca96cff161eedd1073281a5fae39c51d6faf"
+    },
+    {
+      "file": "SCHEZO2.CNS",
+      "bytes": 14814,
+      "sha256": "38d05d429e16917e93b82301def473d430d93c8bb5d7095aedc3e10773468298"
+    },
+    {
+      "file": "SCU.CNS",
+      "bytes": 47984,
+      "sha256": "1f0922e05d03bb2b89c507aed20f5333c30202eee7b687c8333df56d8de3c7ad"
+    },
+    {
+      "file": "SHCE_XXX.CNS",
+      "bytes": 5243,
+      "sha256": "1bac64a15ad2b7aacbe048dd343dbde194ce4913e7e5600fd5cd55b371cff58e"
+    },
+    {
+      "file": "SHEZ_EF.CNS",
+      "bytes": 6466,
+      "sha256": "501ac2b1f5ad1960a548ee4f744a3e126c43a414619ea98b9563d1d457ee86ee"
+    },
+    {
+      "file": "SITAMUKI.CNS",
+      "bytes": 21278,
+      "sha256": "bb416f7fd50ae86df7944f13f1fb95e49bf41eabd76a9404f055e15453688495"
+    },
+    {
+      "file": "SKELTON.CNS",
+      "bytes": 12524,
+      "sha256": "6d2b24189d694e829d6407469b2f47b89167ccec5dd030a062835c90168f1853"
+    },
+    {
+      "file": "SPECTER.CNS",
+      "bytes": 13320,
+      "sha256": "41a34ac0fc8ee676f26c7703103131748208d6da323235fa1e24807c8db5d8e0"
+    },
+    {
+      "file": "STN_EF.CNS",
+      "bytes": 3403,
+      "sha256": "8479bd1109a4d59ddc8aa8985d74a6f856791373d4dcf7cac2f4c980865d1366"
+    },
+    {
+      "file": "STUDENTA.CNS",
+      "bytes": 4512,
+      "sha256": "8231e43fe772f2b71503a18c2d6a9fdb1e6b360724c583a857f4a5c71e2778a4"
+    },
+    {
+      "file": "STUDENTB.CNS",
+      "bytes": 6071,
+      "sha256": "f2fd0edee8d4601a5dd5ff062f35151483d9f3de43c637697dacaf5a9f7bf5bf"
+    },
+    {
+      "file": "STUDENTC.CNS",
+      "bytes": 5077,
+      "sha256": "e3d77ef6ae0a6d10fbf886ed657b31c81b64ee2e7c2bb5f03ad785abec46c9ef"
+    },
+    {
+      "file": "STUDENTD.CNS",
+      "bytes": 5767,
+      "sha256": "ba2094e7778103b3cf32db1cc6068f066e9fcb72adbc14fdeeb570bea5af8692"
+    },
+    {
+      "file": "SUBTIT.CNS",
+      "bytes": 5572,
+      "sha256": "ab248604ea46aba1392fa01ffa78e1edc1c8b3c090f80245a1b9bcd53a30296c"
+    },
+    {
+      "file": "SWITCH2.CNS",
+      "bytes": 631,
+      "sha256": "557e43a69d0bce644e76b8354b844e323af5169f6e94cb29a89a19b749bf1bf3"
+    },
+    {
+      "file": "SYOKUDAI.CNS",
+      "bytes": 2678,
+      "sha256": "a0127bb91846ff2f6f7875cc65dbfc1dea06d38d05648d80db3481cd096a0b31"
+    },
+    {
+      "file": "S_SAIDAN.CNS",
+      "bytes": 3141,
+      "sha256": "598689d0d8d95c45b193111788604a4d25a470e1b4259ae44379b81cbcb51fc7"
+    },
+    {
+      "file": "TAKARA_B.CNS",
+      "bytes": 1408,
+      "sha256": "0774963ff873d78557f66777f277333f214f8518a6afceaf30867326eefa0192"
+    },
+    {
+      "file": "TAMA.CNS",
+      "bytes": 1578,
+      "sha256": "2dc46a468d5fa135e29a4d03f4d2083ee3e6e7e86eddcfe44425c4e9ab9baa6b"
+    },
+    {
+      "file": "TITLE.CNS",
+      "bytes": 221905,
+      "sha256": "45ab3b2ed7d80017fb5da9f0087a8ac438850014a4fcbb56d8ab58b89fd44e96"
+    },
+    {
+      "file": "TIT_BG.CNS",
+      "bytes": 201138,
+      "sha256": "7bbf3c002024288b954a643498c41e816b9c007cd5f3fe424bb6fb3d4f25a03e"
+    },
+    {
+      "file": "TSUE.CNS",
+      "bytes": 601,
+      "sha256": "5abca94f9b2fe3e63400620722517404f01ca546f79eddaaf5763c2bcaef40f6"
+    },
+    {
+      "file": "UEMUKI.CNS",
+      "bytes": 21266,
+      "sha256": "649ad92c0636b4acc66b931eac46777445e62260c6272a68475dff7fa7623235"
+    },
+    {
+      "file": "UP.CNS",
+      "bytes": 13754,
+      "sha256": "0005e044505a7a6892cfda04037323cae3ec2a078aeb06bb02b22a3795550c89"
+    },
+    {
+      "file": "UROK.CNS",
+      "bytes": 23951,
+      "sha256": "5b968f819c372759ffa67ecd02998b14923c28ec205961cb0d34b8ba2c354c8e"
+    },
+    {
+      "file": "UROK_ATK.CNS",
+      "bytes": 56043,
+      "sha256": "dadcc3ea2b612e5bf997218a7685dffb237d903a6c51861eed4616edca61863c"
+    },
+    {
+      "file": "VOICE.WLK",
+      "bytes": 3819990,
+      "sha256": "038b316ee67c10d3b5cb673d432ef9e2a32c878368342bc9d540c8c09bc9ecbd"
+    },
+    {
+      "file": "WAKU.CNS",
+      "bytes": 358,
+      "sha256": "4993986ea3e2dc07bb2c76927db1e69fa760ba1ce6ee864d6c66bc45065e2dd5"
+    },
+    {
+      "file": "WALL_BRK.CNS",
+      "bytes": 24247,
+      "sha256": "0ccf314806a5018d9a505a0341a247ad5135bdcde8b9d0297bde669c1b809ef9"
+    },
+    {
+      "file": "WITCH.CNS",
+      "bytes": 49581,
+      "sha256": "7bf2c18d6e803bd509e5b8c109c1037ddf87d5e30e009dfb5d80c6849302545c"
+    },
+    {
+      "file": "WITCH_N.CNS",
+      "bytes": 28028,
+      "sha256": "55a0aca5c0c425f6e093b2367507cc5980984b3cc955ea0097d8f6ed0c475888"
+    },
+    {
+      "file": "YAJIRU.CNS",
+      "bytes": 5563,
+      "sha256": "a0a6a575a91b0a1a616df95748afda08db56da784832c8adf21fc267838fb4a9"
+    },
+    {
+      "file": "YD_4.CNS",
+      "bytes": 380,
+      "sha256": "8209a8e2903f8a3c7a14c5597c2bf5c41ca0f5e071c90620d9bc353e1a4f9108"
+    },
+    {
+      "file": "YELLOW_D.CNS",
+      "bytes": 8077,
+      "sha256": "81b6a261fc738bbd19f1f1ed1e0427e133a5f4d43921228ca4595b3b5ea8f8d5"
+    },
+    {
+      "file": "YN.CNS",
+      "bytes": 2696,
+      "sha256": "2beae4cb197543f5fcdc75ae26f9f44061d94651fa2e7184376523039b3f53bb"
+    }
+  ]
+}

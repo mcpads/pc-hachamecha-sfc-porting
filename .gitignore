@@ -1,0 +1,7 @@
+/.build/
+/dist/
+/release/
+/target/
+/tad/target/
+/web/node_modules/
+__pycache__/

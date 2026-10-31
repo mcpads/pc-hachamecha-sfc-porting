@@ -1,0 +1,1 @@
+{"source":{"index":8},"ppqn":24,"offset_ticks":7,"whole_bars":false,"tracks":[{"name":"ch3 bass","role":"lead","channels":[3],"volume":31,"pan":0,"fill_gaps":6},{"name":"ch1 bell","role":"countermelody","channels":[1],"volume":22,"pan":0},{"name":"ch2 copy of ch3","role":"layer","channels":[2],"copy_of":"ch3 bass","volume":21,"pan":0}]}

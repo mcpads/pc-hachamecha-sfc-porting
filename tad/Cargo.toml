@@ -1,0 +1,14 @@
+[workspace]
+resolver = "2"
+members = ["crates/brr", "crates/compiler", "crates/spc700asm", "crates/tad-compiler"]
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+
+[profile.release.package.brr]
+opt-level = 3
+
+[profile.release.package.compiler]
+opt-level = 3

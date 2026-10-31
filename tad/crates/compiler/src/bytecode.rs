@@ -1,0 +1,2675 @@
+#![allow(clippy::assertions_on_constants)]
+use crate::command_compiler::analysis::{TransposeRange, TransposeStartRange};
+use crate::command_compiler::commands::{InstrumentAnalysis, LoopAnalysis, SkipLastLoopAnalysis};
+use crate::driver_constants::{
+    BC_CHANNEL_STACK_SIZE, BC_STACK_BYTES_PER_LOOP, BC_STACK_BYTES_PER_SUBROUTINE_CALL,
+    FIR_FILTER_SIZE, MAX_BRR_SAMPLES,
+};
+use crate::echo::{EchoEdl, EchoFeedback, EchoLength, EchoVolume, FirCoefficient, FirTap};
+use crate::envelope::{Adsr, Envelope, Gain, OptionalGain, TempGain};
+use crate::errors::{BytecodeError, ChannelError, ValueError};
+use crate::identifier::MusicChannelIndex;
+use crate::invert_flags::InvertFlags;
+use crate::notes::{Note, NoteRange, LAST_NOTE_ID, N_NOTES};
+use crate::pitch_table::{InstrumentHintFreq, PitchTable, PitchTableOffset};
+use crate::project::{self, BrrSamplePitches, UniqueNamesList};
+use crate::songs::MainVolume;
+use crate::subroutines::{CompiledSubroutines, GetSubroutineResult, Subroutine, SubroutineNameMap};
+use crate::time::{CommandTicks, TickClock, TickCounter, TickCounterWithLoopFlag};
+use crate::value_newtypes::{
+    i16_non_zero_value_newtype, i16_value_newtype, i8_value_newtype, u16_value_newtype,
+    u8_0_is_256_value_newtype, u8_value_newtype, SignedValueNewType, UnsignedValueNewType,
+};
+use core::unreachable;
+use std::cmp::{max, min};
+use std::ops::RangeInclusive;
+pub const KEY_OFF_TICK_DELAY: u16 = 1;
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
+pub struct StackDepth(u32);
+const MAX_STACK_DEPTH: StackDepth = StackDepth(BC_CHANNEL_STACK_SIZE as u32);
+u8_value_newtype!(Volume, VolumeOutOfRange, NoVolume);
+u8_value_newtype!(Pan, PanOutOfRange, NoPan, 0, 128);
+i8_value_newtype!(
+    RelativeVolume,
+    RelativeVolumeOutOfRange,
+    NoRelativeVolume,
+    NoRelativeVolumeSign
+);
+i8_value_newtype!(
+    RelativePan,
+    RelativePanOutOfRange,
+    NoRelativePan,
+    NoRelativePanSign
+);
+u8_value_newtype!(
+    VibratoPitchOffsetPerTick,
+    VibratoPitchOffsetPerTickOutOfRange,
+    NoVibratoPitchOffsetPerTick
+);
+u8_value_newtype!(
+    VibratoQuarterWavelengthInTicks,
+    VibratoQuarterWavelengthOutOfRange,
+    NoVibratoQuarterWavelength,
+    1,
+    128
+);
+u8_value_newtype!(
+    VibratoDelayTicks,
+    VibratoDelayTicksOutOfRange,
+    NoVibratoDelayTicks
+);
+i16_non_zero_value_newtype!(
+    VolumeSlideAmount,
+    VolumeSlideAmountOutOfRange,
+    NoVolumeSlideDirection,
+    NoVolumeSlideDirection,
+    VolumeSlideAmountZero,
+    -(Volume::MAX.as_u8() as i16),
+    Volume::MAX.as_u8() as i16
+);
+u8_0_is_256_value_newtype!(
+    VolumeSlideTicks,
+    VolumeSlideTicksOutOfRange,
+    NoVolumeSlideTicks
+);
+u8_value_newtype!(
+    TremoloAmplitude,
+    TremoloAmplitudeOutOfRange,
+    NoTremoloAmplitude,
+    1,
+    Volume::MAX.as_u8() / 2
+);
+u8_value_newtype!(
+    TremoloQuarterWavelengthInTicks,
+    TremoloQuarterWavelengthTicksOutOfRange,
+    NoTremoloQuarterWavelengthTicks,
+    1,
+    127
+);
+i16_non_zero_value_newtype!(
+    PanSlideAmount,
+    PanSlideAmountOutOfRange,
+    NoPanSlideDirection,
+    NoPanSlideDirection,
+    PanSlideAmountZero,
+    -(Pan::MAX.as_u8() as i16),
+    Pan::MAX.as_u8() as i16
+);
+u8_0_is_256_value_newtype!(PanSlideTicks, PanSlideTicksOutOfRange, NoPanSlideTicks);
+u8_value_newtype!(
+    PanbrelloAmplitude,
+    PanbrelloAmplitudeOutOfRange,
+    NoPanbrelloAmplitude,
+    1,
+    Pan::MAX.as_u8() / 2
+);
+u8_value_newtype!(
+    PanbrelloQuarterWavelengthInTicks,
+    PanbrelloQuarterWavelengthTicksOutOfRange,
+    NoPanbrelloQuarterWavelengthTicks,
+    1,
+    127
+);
+u16_value_newtype!(
+    PlayPitchPitch,
+    PlayPitchPitchOutOfRange,
+    NoPlayPitchPitch,
+    0,
+    (1 << 14) - 1
+);
+impl PlayPitchPitch {
+    pub const NATIVE: Self = Self(0x1000);
+}
+i8_value_newtype!(Transpose, TransposeOutOfRange, NoTranspose, NoTransposeSign);
+impl Transpose {
+    pub const ZERO: Self = Self(0);
+}
+i8_value_newtype!(
+    RelativeTranspose,
+    RelativeTransposeOutOfRange,
+    NoRelativeTranspose,
+    NoRelativeTransposeSign
+);
+i16_value_newtype!(
+    DetuneValue,
+    DetuneValueOutOfRange,
+    NoDetuneValue,
+    NoDetuneValueSign,
+    -((1 << 14) - 1),
+    (1 << 14) - 1
+);
+impl DetuneValue {
+    pub const ZERO: Self = Self(0);
+}
+u8_value_newtype!(
+    NoiseFrequency,
+    NoiseFrequencyOutOfRange,
+    NoNoiseFrequency,
+    0,
+    (1 << 5) - 1
+);
+impl NoiseFrequency {
+    pub const MASK: u8 = (1 << 5) - 1;
+}
+impl Pan {
+    pub const CENTER: Pan = Self(Self::MAX.0 / 2);
+}
+i8_value_newtype!(
+    RelativeMainVolume,
+    RelativeMainVolumeOutOfRange,
+    NoRelativeMainVolume,
+    NoRelativeMainVolumeSign
+);
+impl RelativeMainVolume {
+    pub const ZERO: Self = Self(0);
+}
+i8_value_newtype!(
+    RelativeEchoVolume,
+    RelativeEchoVolumeOutOfRange,
+    NoRelativeEchoVolume,
+    NoRelativeEchoVolumeSign,
+    -(EchoVolume::MAX.as_u8() as i8),
+    EchoVolume::MAX.as_u8() as i8
+);
+i8_value_newtype!(
+    RelativeEchoFeedback,
+    RelativeEchoFeedbackOutOfRange,
+    NoRelativeEchoFeedback,
+    NoRelativeEchoFeedbackSign
+);
+impl RelativeEchoFeedback {
+    pub const ZERO: Self = Self(0);
+}
+i8_value_newtype!(
+    RelativeFirCoefficient,
+    RelativeFirCoefficientOutOfRange,
+    NoRelativeFirCoefficient,
+    NoRelativeFirCoefficientSign
+);
+impl RelativeFirCoefficient {
+    pub const ZERO: Self = Self(0);
+}
+pub enum BytecodeContext {
+    SongSubroutine {
+        max_edl: EchoEdl,
+    },
+    SongChannel {
+        index: MusicChannelIndex,
+        max_edl: EchoEdl,
+    },
+    SfxSubroutine,
+    SoundEffect,
+    MmlPrefix,
+    #[cfg(feature = "test")]
+    UnitTestAssembly,
+    #[cfg(feature = "test")]
+    UnitTestAssemblySubroutine,
+}
+impl BytecodeContext {
+    fn is_subroutine(&self) -> bool {
+        match self {
+            Self::SongSubroutine { .. } | Self::SfxSubroutine => true,
+            Self::SongChannel { .. } | Self::SoundEffect | Self::MmlPrefix => false,
+            #[cfg(feature = "test")]
+            Self::UnitTestAssemblySubroutine => true,
+            #[cfg(feature = "test")]
+            Self::UnitTestAssembly => false,
+        }
+    }
+}
+pub mod opcodes {
+    macro_rules! declare_opcode_recursive {
+        ($opcode:expr, $name:ident) => {
+            pub const $name : u8 = $opcode; const _ : () = assert!($name <
+            DISABLE_CHANNEL, "Too many opcodes");
+        };
+        ($opcode:expr, $name:ident, $($tail:ident),+) => {
+            pub const $name : u8 = $opcode; declare_opcode_recursive!($opcode + 1u8,
+            $($tail),+);
+        };
+    }
+    macro_rules! declare_opcodes {
+        ($first:ident, $($tail:ident),+ $(,)?) => {
+            declare_opcode_recursive!(0u8, $first, $($tail),+);
+        };
+    }
+    declare_opcodes!(
+        RESERVED_FOR_CUSTOM_USE,
+        MISCELLANEOUS,
+        PORTAMENTO_DOWN,
+        PORTAMENTO_UP,
+        PORTAMENTO_CALC,
+        PORTAMENTO_PITCH_DOWN,
+        PORTAMENTO_PITCH_UP,
+        PORTAMENTO_PITCH_CALC,
+        SET_VIBRATO,
+        SET_VIBRATO_WITH_DELAY,
+        SET_VIBRATO_DEPTH_AND_PLAY_NOTE,
+        PLAY_PITCH,
+        PLAY_NOISE,
+        WAIT,
+        REST,
+        SET_INSTRUMENT,
+        SET_INSTRUMENT_AND_ADSR_OR_GAIN,
+        SET_ADSR,
+        SET_GAIN,
+        SET_TEMP_GAIN,
+        SET_TEMP_GAIN_AND_WAIT,
+        SET_TEMP_GAIN_AND_REST,
+        REUSE_TEMP_GAIN_AND_WAIT,
+        REUSE_TEMP_GAIN_AND_REST,
+        SET_EARLY_RELEASE,
+        SET_EARLY_RELEASE_NO_MINIMUM,
+        SET_TRANSPOSE,
+        ADJUST_TRANSPOSE,
+        SET_DETUNE_I16,
+        SET_DETUNE_P8,
+        SET_DETUNE_N8,
+        ADJUST_PAN,
+        SET_PAN,
+        SET_PAN_AND_VOLUME,
+        ADJUST_VOLUME,
+        SET_VOLUME,
+        SET_CHANNEL_OR_ECHO_INVERT,
+        VOLUME_SLIDE_UP,
+        VOLUME_SLIDE_DOWN,
+        TREMOLO,
+        PAN_SLIDE_UP,
+        PAN_SLIDE_DOWN,
+        PANBRELLO,
+        START_LOOP,
+        SKIP_LAST_LOOP_U8,
+        SKIP_LAST_LOOP_U16BE,
+        CALL_SUBROUTINE_AND_DISABLE_VIBRATO,
+        CALL_SUBROUTINE,
+        GOTO_RELATIVE,
+        SET_ECHO_VOLUME,
+        SET_STEREO_ECHO_VOLUME,
+        ADJUST_ECHO_VOLUME,
+        ADJUST_STEREO_ECHO_VOLUME,
+        SET_FIR_FILTER,
+        SET_OR_ADJUST_GLOBAL_I8,
+        ADJUST_GLOBAL_I8_LIMIT,
+        END_LOOP,
+        RETURN_FROM_SUBROUTINE_AND_DISABLE_VIBRATO,
+        RETURN_FROM_SUBROUTINE,
+        ENABLE_ECHO,
+        DISABLE_ECHO,
+        REUSE_TEMP_GAIN,
+        KEYON_NEXT_NOTE,
+    );
+    pub const DISABLE_CHANNEL: u8 = FIRST_PLAY_NOTE_INSTRUCTION - 1;
+    pub const FIRST_PLAY_NOTE_INSTRUCTION: u8 = 64;
+}
+const _: () = assert!(
+    opcodes::FIRST_PLAY_NOTE_INSTRUCTION as u32 + (N_NOTES * 2) as u32 == 0x100,
+    "There are unaccounted bytecode opcodes"
+);
+const _: () = assert!(opcodes::RESERVED_FOR_CUSTOM_USE == 0);
+#[derive(Clone, Copy)]
+#[allow(clippy::unusual_byte_groupings)]
+pub enum MiscInstruction {
+    DisableNoise = 0,
+    DisablePmod = 0b000001_00,
+    EnablePmod = 0b000000_10,
+    SetSongTickClock = 0b000000_01,
+    SetEchoDelay = 0b000000_11,
+}
+impl MiscInstruction {
+    fn as_u8(&self) -> u8 {
+        *self as u8
+    }
+    pub fn from_opcode(o: u8) -> Self {
+        if o == 0 {
+            Self::DisableNoise
+        } else {
+            match o & 0b11 {
+                0b00 => Self::DisablePmod,
+                0b10 => Self::EnablePmod,
+                0b01 => Self::SetSongTickClock,
+                0b11 => Self::SetEchoDelay,
+                _ => unreachable!("Invalid prefix"),
+            }
+        }
+    }
+}
+const GLOBAL_I8_EFB_INDEX: u8 = 8;
+const GLOBAL_I8_MAIN_VOLUME_INDEX: u8 = 9;
+pub const MAX_SET_OR_ADJUST_GLOBAL_I8_PARAM: u8 = (GLOBAL_I8_MAIN_VOLUME_INDEX << 1) | 1;
+const _: () = assert!(FirTap::MAX.as_u8() < GLOBAL_I8_EFB_INDEX);
+pub(crate) const GOTO_RELATIVE_INSTRUCTION_SIZE: usize = 3;
+u8_value_newtype!(
+    InstrumentId,
+    InstrumentIdOutOfRange,
+    NoInstrumentId,
+    0,
+    (MAX_BRR_SAMPLES - 1) as u8
+);
+impl StackDepth {
+    pub fn to_u32(self) -> u32 {
+        self.0
+    }
+}
+struct BcLength(u16);
+trait ToBcLength {
+    fn to_bc_length(self) -> BcLength;
+}
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct BcTicksKeyOff(u16);
+impl BcTicksKeyOff {
+    pub const MIN: Self = Self(1 + KEY_OFF_TICK_DELAY);
+    pub const MAX: Self = Self(u16::MAX);
+    const U16_RANGE: RangeInclusive<u16> = Self::MIN.0..=Self::MAX.0;
+    const U32_RANGE: RangeInclusive<u32> = (Self::MIN.0 as u32)..=(Self::MAX.0 as u32);
+    pub const fn ticks(self) -> u16 {
+        self.0
+    }
+    pub fn to_tick_count(self) -> TickCounter {
+        TickCounter::new(self.0.into())
+    }
+}
+impl ToBcLength for BcTicksKeyOff {
+    fn to_bc_length(self) -> BcLength {
+        BcLength(self.0)
+    }
+}
+impl TryFrom<u16> for BcTicksKeyOff {
+    type Error = ValueError;
+    fn try_from(ticks: u16) -> Result<Self, ValueError> {
+        if Self::U16_RANGE.contains(&ticks) {
+            Ok(Self(ticks))
+        } else {
+            Err(ValueError::BcTicksKeyOffOutOfRange(ticks.into()))
+        }
+    }
+}
+impl TryFrom<u32> for BcTicksKeyOff {
+    type Error = ValueError;
+    fn try_from(ticks: u32) -> Result<Self, ValueError> {
+        if Self::U32_RANGE.contains(&ticks) {
+            Ok(Self(ticks.try_into().unwrap()))
+        } else {
+            Err(ValueError::BcTicksKeyOffOutOfRange(ticks))
+        }
+    }
+}
+impl TryFrom<CommandTicks> for BcTicksKeyOff {
+    type Error = ValueError;
+    fn try_from(ticks: CommandTicks) -> Result<Self, ValueError> {
+        Self::try_from(ticks.value())
+    }
+}
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct BcTicksNoKeyOff(u16);
+impl BcTicksNoKeyOff {
+    pub const MIN: Self = Self(1);
+    pub const MAX: Self = Self(u16::MAX);
+    const U16_RANGE: RangeInclusive<u16> = Self::MIN.0..=Self::MAX.0;
+    const U32_RANGE: RangeInclusive<u32> = (Self::MIN.0 as u32)..=(Self::MAX.0 as u32);
+    pub const fn ticks(self) -> u16 {
+        self.0
+    }
+    pub fn to_tick_count(self) -> TickCounter {
+        TickCounter::new(self.0.into())
+    }
+}
+impl ToBcLength for BcTicksNoKeyOff {
+    fn to_bc_length(self) -> BcLength {
+        BcLength(self.0)
+    }
+}
+impl TryFrom<u16> for BcTicksNoKeyOff {
+    type Error = ValueError;
+    fn try_from(ticks: u16) -> Result<Self, ValueError> {
+        if Self::U16_RANGE.contains(&ticks) {
+            Ok(Self(ticks))
+        } else {
+            Err(ValueError::BcTicksNoKeyOffOutOfRange(ticks.into()))
+        }
+    }
+}
+impl TryFrom<u32> for BcTicksNoKeyOff {
+    type Error = ValueError;
+    fn try_from(ticks: u32) -> Result<Self, ValueError> {
+        if Self::U32_RANGE.contains(&ticks) {
+            Ok(Self(ticks.try_into().unwrap()))
+        } else {
+            Err(ValueError::BcTicksNoKeyOffOutOfRange(ticks))
+        }
+    }
+}
+impl TryFrom<CommandTicks> for BcTicksNoKeyOff {
+    type Error = ValueError;
+    fn try_from(ticks: CommandTicks) -> Result<Self, ValueError> {
+        Self::try_from(ticks.value())
+    }
+}
+#[derive(Debug, Copy, Clone)]
+pub enum PlayNoteTicks {
+    KeyOff(BcTicksKeyOff),
+    NoKeyOff(BcTicksNoKeyOff),
+}
+impl PlayNoteTicks {
+    pub fn try_from_is_slur(ticks: CommandTicks, is_slur: bool) -> Result<Self, ValueError> {
+        if is_slur {
+            Ok(PlayNoteTicks::NoKeyOff(BcTicksNoKeyOff::try_from(
+                ticks.value(),
+            )?))
+        } else {
+            Ok(PlayNoteTicks::KeyOff(BcTicksKeyOff::try_from(
+                ticks.value(),
+            )?))
+        }
+    }
+    pub fn try_from_is_slur_u32(ticks: u32, is_slur: bool) -> Result<Self, ValueError> {
+        if is_slur {
+            Ok(PlayNoteTicks::NoKeyOff(BcTicksNoKeyOff::try_from(ticks)?))
+        } else {
+            Ok(PlayNoteTicks::KeyOff(BcTicksKeyOff::try_from(ticks)?))
+        }
+    }
+    pub fn min_for_is_slur(is_slur: bool) -> Self {
+        if is_slur {
+            PlayNoteTicks::NoKeyOff(BcTicksNoKeyOff::MIN)
+        } else {
+            PlayNoteTicks::KeyOff(BcTicksKeyOff::MIN)
+        }
+    }
+    pub fn ticks(&self) -> u16 {
+        match self {
+            Self::KeyOff(l) => l.ticks(),
+            Self::NoKeyOff(l) => l.ticks(),
+        }
+    }
+    pub fn is_slur(&self) -> bool {
+        match self {
+            Self::KeyOff(_) => false,
+            Self::NoKeyOff(_) => true,
+        }
+    }
+    fn to_tick_count(self) -> TickCounter {
+        match self {
+            Self::KeyOff(l) => TickCounter::new(l.ticks().into()),
+            Self::NoKeyOff(l) => TickCounter::new(l.ticks().into()),
+        }
+    }
+}
+impl ToBcLength for PlayNoteTicks {
+    fn to_bc_length(self) -> BcLength {
+        match self {
+            Self::KeyOff(l) => l.to_bc_length(),
+            Self::NoKeyOff(l) => l.to_bc_length(),
+        }
+    }
+}
+i16_non_zero_value_newtype!(
+    PortamentoVelocity,
+    PortamentoVelocityOutOfRange,
+    NoPortamentoVelocity,
+    NoDirectionInPortamentoVelocity,
+    PortamentoVelocityZero,
+    -(u8::MAX as i16),
+    u8::MAX as i16
+);
+impl PortamentoVelocity {
+    pub fn pitch_offset_per_tick(&self) -> u8 {
+        u8::try_from(self.0.unsigned_abs()).unwrap()
+    }
+}
+u8_value_newtype!(
+    PortamentoSlideTicks,
+    PortamentoSlideTicksOutOfRange,
+    NoPortamentoSlideTicks,
+    1,
+    u8::MAX
+);
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct LoopCount(u8);
+impl LoopCount {
+    pub const MIN_LOOPS: u32 = 2;
+    pub const MAX_LOOPS: u32 = 0x100;
+    pub const MIN: Self = Self(Self::MIN_LOOPS as u8);
+    pub const MAX: Self = Self(0);
+    pub fn to_i16(self) -> i16 {
+        if self.0 == 0 {
+            0x100
+        } else {
+            self.0.into()
+        }
+    }
+    pub fn to_u32(self) -> u32 {
+        if self.0 == 0 {
+            0x100
+        } else {
+            self.0.into()
+        }
+    }
+}
+impl UnsignedValueNewType for LoopCount {
+    type ValueType = u32;
+    const MISSING_ERROR: ValueError = ValueError::NoLoopCount;
+    fn value(&self) -> Self::ValueType {
+        self.to_u32()
+    }
+}
+impl TryFrom<u32> for LoopCount {
+    type Error = ValueError;
+    fn try_from(loop_count: u32) -> Result<Self, Self::Error> {
+        if loop_count == 0x100 {
+            Ok(LoopCount(0))
+        } else if loop_count < Self::MIN_LOOPS {
+            Err(ValueError::NotEnoughLoops)
+        } else {
+            match u8::try_from(loop_count) {
+                Ok(i) => Ok(LoopCount(i)),
+                Err(_) => Err(ValueError::TooManyLoops),
+            }
+        }
+    }
+}
+struct NoteOpcode {
+    opcode: u8,
+}
+impl NoteOpcode {
+    fn new(note: Note, length: &PlayNoteTicks) -> Self {
+        const _: () = assert!(
+            opcodes::FIRST_PLAY_NOTE_INSTRUCTION as u32 + (((LAST_NOTE_ID as u32) << 1) | 1)
+                <= u8::MAX as u32,
+            "Overflow test failed"
+        );
+        let key_off_bit = match length {
+            PlayNoteTicks::NoKeyOff(_) => 0,
+            PlayNoteTicks::KeyOff(_) => 1,
+        };
+        let opcode = opcodes::FIRST_PLAY_NOTE_INSTRUCTION + ((note.note_id() << 1) | key_off_bit);
+        Self { opcode }
+    }
+}
+u8_value_newtype!(
+    EarlyReleaseTicks,
+    EarlyReleaseTicksOutOfRange,
+    NoEarlyReleaseTicks,
+    1,
+    u8::MAX - 1
+);
+impl EarlyReleaseTicks {
+    fn bc_argument(self) -> u8 {
+        self.0 + 1
+    }
+}
+u8_value_newtype!(
+    EarlyReleaseMinTicks,
+    EarlyReleaseMinTicksOutOfRange,
+    NoEarlyReleaseMinTicks,
+    1,
+    u8::MAX
+);
+impl EarlyReleaseMinTicks {
+    fn bc_argument(self) -> u8 {
+        self.0
+    }
+}
+#[derive(PartialEq)]
+pub enum BcTerminator<'a> {
+    DisableChannel,
+    Goto(usize),
+    ReturnFromSubroutine,
+    ReturnFromSubroutineAndDisableVibrato,
+    TailSubroutineCall(&'a Subroutine),
+}
+impl BcTerminator<'_> {
+    pub fn is_return(&self) -> bool {
+        match self {
+            Self::DisableChannel => false,
+            Self::Goto(_) => false,
+            Self::ReturnFromSubroutine => true,
+            Self::ReturnFromSubroutineAndDisableVibrato => true,
+            Self::TailSubroutineCall(..) => true,
+        }
+    }
+}
+macro_rules! emit_bytecode {
+    ($self:expr, $opcode:expr) => {
+        $self .bytecode.push($opcode);
+    };
+    ($self:expr, $opcode:expr $(, $param:expr)+ $(,)?) => {
+        $self .bytecode.extend([$opcode, $(emit_bytecode::Parameter::cast($param)),*])
+    };
+}
+macro_rules! emit_bytecode_array {
+    ($self:expr, $opcode:expr, $array:expr) => {
+        $self.bytecode.push($opcode);
+        $self.bytecode.extend(
+            $array
+                .into_iter()
+                .map(|i| emit_bytecode::Parameter::cast(i)),
+        );
+    };
+}
+mod emit_bytecode {
+    use super::{opcodes, FirCoefficient, NoteOpcode};
+    pub trait Parameter {
+        fn cast(self) -> u8;
+    }
+    impl Parameter for u8 {
+        fn cast(self) -> u8 {
+            self
+        }
+    }
+    impl Parameter for i8 {
+        fn cast(self) -> u8 {
+            self.to_le_bytes()[0]
+        }
+    }
+    impl Parameter for NoteOpcode {
+        fn cast(self) -> u8 {
+            debug_assert!(self.opcode >= opcodes::FIRST_PLAY_NOTE_INSTRUCTION);
+            self.opcode
+        }
+    }
+    impl Parameter for FirCoefficient {
+        fn cast(self) -> u8 {
+            self.as_i8().to_le_bytes()[0]
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) enum InstrumentState {
+    Unset,
+    Known(InstrumentId, RangeInclusive<Note>),
+    Multiple(RangeInclusive<Note>),
+    Hint(InstrumentId, RangeInclusive<Note>),
+}
+impl InstrumentState {
+    pub fn instrument_id(&self) -> Option<InstrumentId> {
+        match self {
+            Self::Known(i, _) => Some(*i),
+            Self::Hint(i, _) => Some(*i),
+            Self::Multiple(_) => None,
+            Self::Unset => None,
+        }
+    }
+    pub fn is_known_and_eq(&self, o: &InstrumentId) -> bool {
+        match self {
+            Self::Unset => false,
+            Self::Known(i, _) => o == i,
+            Self::Multiple(..) => false,
+            Self::Hint(..) => false,
+        }
+    }
+    #[must_use]
+    fn start_loop_analysis(
+        &mut self,
+        analysis: InstrumentAnalysis,
+        pitch_table: &PitchTable,
+    ) -> PitchTableOffset {
+        match analysis {
+            InstrumentAnalysis::Set(loop_inst_id) => {
+                let (pto, loop_range) = pitch_table.instrument_pto_and_note_range(loop_inst_id);
+                match &self {
+                    Self::Known(si, s_range) | Self::Hint(si, s_range) => {
+                        if *si != loop_inst_id {
+                            *self = InstrumentState::Multiple(
+                                max(*s_range.start(), *loop_range.start())
+                                    ..=min(*s_range.end(), *loop_range.end()),
+                            );
+                        }
+                    }
+                    Self::Multiple(s_range) => {
+                        *self = InstrumentState::Multiple(
+                            max(*s_range.start(), *loop_range.start())
+                                ..=min(*s_range.end(), *loop_range.end()),
+                        );
+                    }
+                    Self::Unset => {
+                        *self = InstrumentState::Multiple(loop_range);
+                    }
+                }
+                pto
+            }
+            InstrumentAnalysis::Hint(inst_id) => pitch_table.pitch_table_offset(inst_id),
+        }
+    }
+    #[must_use]
+    fn end_loop_analysis(
+        &mut self,
+        analysis: InstrumentAnalysis,
+        pitch_table: &PitchTable,
+    ) -> PitchTableOffset {
+        let id = analysis.instrument_id();
+        let (pto, range) = pitch_table.instrument_pto_and_note_range(id);
+        match analysis {
+            InstrumentAnalysis::Set(i) => *self = InstrumentState::Known(i, range),
+            InstrumentAnalysis::Hint(i) => {
+                if *self == InstrumentState::Unset {
+                    *self = InstrumentState::Hint(i, range);
+                }
+            }
+        }
+        pto
+    }
+}
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub(crate) enum IeState<T>
+where
+    T: Copy + PartialEq,
+{
+    Unset,
+    Known(T),
+    MaybeInLoop(T, u8),
+    Unknown,
+}
+impl<T> IeState<T>
+where
+    T: Copy + PartialEq,
+{
+    pub fn is_known_and_eq(&self, o: &T) -> bool {
+        match self {
+            Self::Known(v) => o == v,
+            Self::MaybeInLoop(..) => false,
+            Self::Unknown => false,
+            Self::Unset => false,
+        }
+    }
+    fn start_loop(&mut self, stack_depth: u8) {
+        match self {
+            Self::Unset => {}
+            Self::Known(v) => *self = Self::MaybeInLoop(*v, stack_depth),
+            Self::MaybeInLoop(..) => {}
+            Self::Unknown => {}
+        }
+    }
+    fn merge_skip_last_loop(&mut self, skip_last_loop: Self) {
+        match &skip_last_loop {
+            Self::Unset | Self::MaybeInLoop(..) => {}
+            Self::Known(_) | Self::Unknown => *self = skip_last_loop,
+        }
+    }
+    fn end_loop(&mut self, stack_depth: u8) {
+        match self {
+            Self::Unset => {}
+            Self::Known(..) => {}
+            Self::MaybeInLoop(v, d) => {
+                if *d == stack_depth {
+                    *self = Self::Known(*v);
+                }
+            }
+            Self::Unknown => {}
+        }
+    }
+    fn merge_subroutine(&mut self, subroutine: &Self) {
+        match &subroutine {
+            Self::Unset => {}
+            Self::Known(..) | Self::Unknown => *self = *subroutine,
+            Self::MaybeInLoop(..) => panic!("unexpected maybe state"),
+        }
+    }
+}
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum VibratoState {
+    Unchanged,
+    Unknown,
+    Disabled,
+    Set(
+        VibratoPitchOffsetPerTick,
+        VibratoQuarterWavelengthInTicks,
+        VibratoDelayTicks,
+    ),
+}
+impl VibratoState {
+    pub fn is_active(&self) -> bool {
+        match self {
+            Self::Unchanged => false,
+            Self::Unknown => false,
+            Self::Disabled => false,
+            Self::Set(pitch_offset_per_tick, _, _) => pitch_offset_per_tick.as_u8() > 0,
+        }
+    }
+    fn set_depth(&mut self, depth: VibratoPitchOffsetPerTick) {
+        *self = match self {
+            VibratoState::Unchanged | VibratoState::Unknown | VibratoState::Disabled => {
+                if depth.as_u8() > 0 {
+                    VibratoState::Unknown
+                } else {
+                    VibratoState::Disabled
+                }
+            }
+            VibratoState::Set(_, qwt, delay) => VibratoState::Set(depth, *qwt, *delay),
+        };
+    }
+    fn disable(&mut self) {
+        *self = match self {
+            VibratoState::Unchanged => VibratoState::Disabled,
+            VibratoState::Unknown => VibratoState::Disabled,
+            VibratoState::Disabled => VibratoState::Disabled,
+            VibratoState::Set(_, qwt, delay) => {
+                VibratoState::Set(VibratoPitchOffsetPerTick::new(0), *qwt, *delay)
+            }
+        };
+    }
+}
+#[derive(Debug, Clone, PartialEq)]
+pub enum SlurredNoteState {
+    Unchanged,
+    Unknown,
+    None,
+    Slurred(Note, DetuneValue, Option<PitchTableOffset>),
+    SlurredPitch(PlayPitchPitch),
+    SlurredNoise,
+}
+impl SlurredNoteState {
+    pub fn is_not_slurred(&self) -> bool {
+        match self {
+            Self::Unchanged | Self::Unknown | Self::None => true,
+            Self::Slurred(..) | Self::SlurredPitch(_) | Self::SlurredNoise => false,
+        }
+    }
+    fn merge_skip_last_loop(&mut self, o: &Self) {
+        match o {
+            SlurredNoteState::Unchanged => {}
+            SlurredNoteState::Unknown => {}
+            SlurredNoteState::None => *self = SlurredNoteState::None,
+            SlurredNoteState::Slurred(n, d, i) => {
+                *self = SlurredNoteState::Slurred(*n, *d, *i);
+            }
+            SlurredNoteState::SlurredPitch(p) => {
+                *self = SlurredNoteState::SlurredPitch(*p);
+            }
+            SlurredNoteState::SlurredNoise => *self = SlurredNoteState::SlurredNoise,
+        }
+    }
+    fn merge_subroutine(
+        &mut self,
+        o: &Self,
+        sub_inst_tuning: Option<PitchTableOffset>,
+        caller_inst_tuning: Option<PitchTableOffset>,
+    ) {
+        match o {
+            SlurredNoteState::Unchanged => {}
+            SlurredNoteState::Unknown => {}
+            SlurredNoteState::None => *self = SlurredNoteState::None,
+            SlurredNoteState::Slurred(n, d, i) => match i {
+                Some(i) => *self = SlurredNoteState::Slurred(*n, *d, Some(*i)),
+                None => match sub_inst_tuning {
+                    None => {
+                        *self = SlurredNoteState::Slurred(*n, *d, caller_inst_tuning);
+                    }
+                    _ => *self = SlurredNoteState::None,
+                },
+            },
+            SlurredNoteState::SlurredPitch(p) => {
+                *self = SlurredNoteState::SlurredPitch(*p);
+            }
+            SlurredNoteState::SlurredNoise => *self = SlurredNoteState::SlurredNoise,
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq)]
+struct UnknownTransposeNoInstrumentNotes(RangeInclusive<i32>);
+impl UnknownTransposeNoInstrumentNotes {
+    fn new() -> Self {
+        #[allow(clippy::reversed_empty_ranges)]
+        Self(i32::MAX..=i32::MIN)
+    }
+    fn _extend_i32(&mut self, note: i32) {
+        let s = &mut self.0;
+        if s.is_empty() {
+            *s = note..=note;
+        } else if note < *s.start() {
+            *s = note..=*(s.end());
+        } else if note > *s.end() {
+            *s = *(s.start())..=note;
+        }
+    }
+    fn extend_note(&mut self, note: Note, min_transpose: i8, max_transpose: i8) {
+        assert!(min_transpose <= max_transpose);
+        self._extend_i32(note.i32_note_id() + i32::from(min_transpose));
+        self._extend_i32(note.i32_note_id() + i32::from(max_transpose));
+    }
+    fn unknown_instrument_subroutine_call(&mut self, sub: &Self, transpose: TransposeKnownResult) {
+        match transpose {
+            TransposeKnownResult::Known { min, max }
+            | TransposeKnownResult::Unknown { min, max } => {
+                assert!(min <= max);
+                let min_note = sub.0.start().saturating_add(min.into());
+                let max_note = sub.0.end().saturating_add(max.into());
+                debug_assert!(min_note <= sub.0.end().saturating_add(max.into()));
+                debug_assert!(max_note >= sub.0.end().saturating_add(min.into()));
+                self._extend_i32(min_note);
+                self._extend_i32(max_note);
+            }
+            TransposeKnownResult::Overflow => {}
+        }
+    }
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+    fn test_instrument_can_play_notes(
+        &self,
+        transpose: TransposeRange,
+        inst_note_range: RangeInclusive<Note>,
+    ) -> Result<(), BytecodeError> {
+        match transpose {
+            TransposeRange::Set { min, max } => {
+                let s = &self.0;
+                if !s.is_empty() {
+                    let i32_note_range =
+                        inst_note_range.start().i32_note_id()..=inst_note_range.end().i32_note_id();
+                    let start = s.start().saturating_add(min.into());
+                    let end = s.end().saturating_add(max.into());
+                    if i32_note_range.contains(&start) && i32_note_range.contains(&end) {
+                        Ok(())
+                    } else {
+                        Err(BytecodeError::TransposedSubroutineNotesOutOfRange {
+                            notes: s.clone(),
+                            transpose: min..=max,
+                            inst_range: inst_note_range,
+                        })
+                    }
+                } else {
+                    Ok(())
+                }
+            }
+            TransposeRange::Overflow => Ok(()),
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq)]
+pub struct State {
+    pub tick_counter: TickCounter,
+    pub max_stack_depth: StackDepth,
+    pub tempo_changes: Vec<(TickCounter, TickClock)>,
+    pub(crate) instrument_tuning: Option<PitchTableOffset>,
+    pub(crate) transpose_range: TransposeRange,
+    pub(crate) instrument: InstrumentState,
+    subroutine_transpose_range: Option<TransposeRange>,
+    pub(crate) envelope: IeState<Envelope>,
+    pub(crate) prev_temp_gain: IeState<TempGain>,
+    pub(crate) early_release:
+        IeState<Option<(EarlyReleaseTicks, EarlyReleaseMinTicks, OptionalGain)>>,
+    pub(crate) detune: IeState<DetuneValue>,
+    pub(crate) vibrato: VibratoState,
+    pub(crate) prev_slurred_note: SlurredNoteState,
+    pub(crate) instrument_hint: Option<(InstrumentId, Option<Envelope>, InstrumentHintFreq)>,
+    pub(crate) no_instrument_notes: RangeInclusive<Note>,
+    unknown_transpose_no_instrument_notes: UnknownTransposeNoInstrumentNotes,
+    pub(crate) no_instrument_pitch_or_noise: bool,
+}
+impl State {
+    fn set_prev_slurred_note(&mut self, note: Note, length: PlayNoteTicks) {
+        self.prev_slurred_note = match length {
+            PlayNoteTicks::KeyOff(_) => SlurredNoteState::None,
+            PlayNoteTicks::NoKeyOff(_) => {
+                let o = self.instrument_tuning;
+                match self.detune {
+                    IeState::Unset => SlurredNoteState::Slurred(note, DetuneValue::ZERO, o),
+                    IeState::Known(d) => SlurredNoteState::Slurred(note, d, o),
+                    IeState::MaybeInLoop(d, _) => SlurredNoteState::Slurred(note, d, o),
+                    IeState::Unknown => SlurredNoteState::None,
+                }
+            }
+        };
+    }
+    fn start_loop_or_song_loop_instrument_analysis(
+        &mut self,
+        analysis: &LoopAnalysis,
+        pitch_table: &PitchTable,
+    ) {
+        if let Some(i) = analysis.instrument {
+            let tuning = self.instrument.start_loop_analysis(i, pitch_table);
+            if self.instrument_tuning != Some(tuning) {
+                self.instrument_tuning = None;
+            }
+        }
+    }
+    fn end_loop_or_song_loop_instrument_analysis(
+        &mut self,
+        analysis: &LoopAnalysis,
+        pitch_table: &PitchTable,
+    ) {
+        if let Some(i) = analysis.instrument {
+            let tuning = self.instrument.end_loop_analysis(i, pitch_table);
+            self.instrument_tuning = Some(tuning);
+        }
+    }
+    fn song_loop(&mut self, analysis: &LoopAnalysis, pitch_table: &PitchTable) {
+        self.start_loop_or_song_loop_instrument_analysis(analysis, pitch_table);
+        self.transpose_range.song_loop(analysis.transpose);
+        if let Some(t) = &mut self.subroutine_transpose_range {
+            t.song_loop(analysis.transpose);
+        }
+        self.envelope = IeState::Unknown;
+        self.prev_temp_gain = IeState::Unknown;
+        self.early_release = IeState::Unknown;
+        self.detune.start_loop(u8::MAX);
+        self.vibrato = VibratoState::Unknown;
+        self.prev_slurred_note = SlurredNoteState::Unknown;
+    }
+    fn start_loop(
+        &mut self,
+        stack_depth: usize,
+        analysis: &LoopAnalysis,
+        pitch_table: &PitchTable,
+    ) {
+        self.start_loop_or_song_loop_instrument_analysis(analysis, pitch_table);
+        self.transpose_range.start_loop(analysis.transpose);
+        if let Some(t) = &mut self.subroutine_transpose_range {
+            t.start_loop(analysis.transpose);
+        }
+        let stack_depth = u8::try_from(stack_depth).unwrap_or(u8::MAX);
+        self.envelope.start_loop(stack_depth);
+        self.prev_temp_gain.start_loop(stack_depth);
+        self.early_release.start_loop(stack_depth);
+        self.detune.start_loop(stack_depth);
+        self.vibrato = VibratoState::Unknown;
+        self.prev_slurred_note = SlurredNoteState::Unknown;
+    }
+    fn skip_last_loop(
+        &mut self,
+        analysis: &SkipLastLoopAnalysis,
+        start_loop_transpose_range: TransposeRange,
+        start_loop_subroutine_transpose_range: Option<TransposeRange>,
+    ) {
+        self.transpose_range
+            .skip_last_loop(analysis.transpose, start_loop_transpose_range);
+        if let Some(t) = &mut self.subroutine_transpose_range {
+            t.skip_last_loop(
+                analysis.transpose,
+                start_loop_subroutine_transpose_range.unwrap(),
+            );
+        }
+    }
+    fn merge_skip_last_loop(&mut self, s: SkipLastLoop) {
+        self.envelope.merge_skip_last_loop(s.envelope);
+        self.prev_temp_gain.merge_skip_last_loop(s.prev_temp_gain);
+        self.early_release.merge_skip_last_loop(s.early_release);
+        self.detune.merge_skip_last_loop(s.detune);
+        self.vibrato = s.vibrato;
+        self.prev_slurred_note
+            .merge_skip_last_loop(&s.prev_slurred_note);
+    }
+    fn end_loop(
+        &mut self,
+        stack_depth: usize,
+        analysis: &LoopAnalysis,
+        start_loop_transpose_range: TransposeRange,
+        start_loop_subroutine_transpose_range: Option<TransposeRange>,
+        pitch_table: &PitchTable,
+    ) {
+        self.end_loop_or_song_loop_instrument_analysis(analysis, pitch_table);
+        self.transpose_range
+            .end_loop(analysis.transpose, start_loop_transpose_range);
+        if let Some(t) = &mut self.subroutine_transpose_range {
+            if let Some(slstr) = start_loop_subroutine_transpose_range {
+                t.end_loop(analysis.transpose, slstr);
+            }
+        }
+        let stack_depth = u8::try_from(stack_depth).unwrap_or(u8::MAX);
+        self.envelope.end_loop(stack_depth);
+        self.prev_temp_gain.end_loop(stack_depth);
+        self.early_release.end_loop(stack_depth);
+        self.detune.end_loop(stack_depth);
+    }
+    fn merge_subroutine(&mut self, s: &State, analysis: &LoopAnalysis, pitch_table: &PitchTable) {
+        self.end_loop_or_song_loop_instrument_analysis(analysis, pitch_table);
+        self.transpose_range.subroutine_call(analysis.transpose);
+        if let Some(t) = &mut self.subroutine_transpose_range {
+            t.subroutine_call(analysis.transpose);
+        }
+        self.envelope.merge_subroutine(&s.envelope);
+        self.prev_temp_gain.merge_subroutine(&s.prev_temp_gain);
+        self.early_release.merge_subroutine(&s.early_release);
+        self.detune.merge_subroutine(&s.detune);
+        match &s.vibrato {
+            VibratoState::Unchanged => {}
+            VibratoState::Unknown => self.vibrato = VibratoState::Unknown,
+            VibratoState::Disabled => self.vibrato = VibratoState::Disabled,
+            v @ VibratoState::Set(..) => self.vibrato = *v,
+        }
+        self.prev_slurred_note.merge_subroutine(
+            &s.prev_slurred_note,
+            s.instrument_tuning,
+            self.instrument_tuning,
+        );
+    }
+    pub fn instrument_hint_freq(&self) -> Option<InstrumentHintFreq> {
+        self.instrument_hint.map(|(_, _, f)| f)
+    }
+    fn set_transpose(&mut self, transpose: Transpose) {
+        self.transpose_range.set(transpose);
+        if let Some(t) = &mut self.subroutine_transpose_range {
+            t.set(transpose);
+        }
+    }
+    fn adjust_transpose(&mut self, adjust: RelativeTranspose) {
+        self.transpose_range.adjust(adjust);
+        if let Some(t) = &mut self.subroutine_transpose_range {
+            t.adjust(adjust);
+        }
+    }
+    fn is_transpose_known(&self) -> TransposeKnownResult {
+        match (self.subroutine_transpose_range, self.transpose_range) {
+            (None, TransposeRange::Set { min, max }) => TransposeKnownResult::Known { min, max },
+            (Some(st @ TransposeRange::Set { min, max }), t @ TransposeRange::Set { .. })
+                if st == t =>
+            {
+                TransposeKnownResult::Known { min, max }
+            }
+            (Some(TransposeRange::Set { min, max }), TransposeRange::Set { .. }) => {
+                TransposeKnownResult::Unknown { min, max }
+            }
+            (Some(TransposeRange::Overflow), _) | (_, TransposeRange::Overflow) => {
+                TransposeKnownResult::Overflow
+            }
+        }
+    }
+}
+enum TransposeKnownResult {
+    Known { min: i8, max: i8 },
+    Unknown { min: i8, max: i8 },
+    Overflow,
+}
+struct SkipLastLoop {
+    tick_counter: TickCounter,
+    bc_parameter_position: usize,
+    envelope: IeState<Envelope>,
+    prev_temp_gain: IeState<TempGain>,
+    early_release: IeState<Option<(EarlyReleaseTicks, EarlyReleaseMinTicks, OptionalGain)>>,
+    detune: IeState<DetuneValue>,
+    vibrato: VibratoState,
+    prev_slurred_note: SlurredNoteState,
+}
+struct LoopState {
+    start_loop_count: Option<LoopCount>,
+    start_loop_pos: usize,
+    start_loop_transpose_range: TransposeRange,
+    start_loop_subroutine_transpose_range: Option<TransposeRange>,
+    tick_counter_at_start_of_loop: TickCounter,
+    skip_last_loop: Option<SkipLastLoop>,
+}
+pub struct Bytecode<'a> {
+    context: BytecodeContext,
+    bytecode: Vec<u8>,
+    instruments: &'a UniqueNamesList<project::BrrSample>,
+    pitch_table: &'a PitchTable,
+    subroutines: &'a CompiledSubroutines,
+    subroutin_name_map: &'a dyn SubroutineNameMap,
+    state: State,
+    loop_stack: Vec<LoopState>,
+    asm_block_stack_len: usize,
+    show_missing_set_instrument_error: bool,
+}
+impl<'a> Bytecode<'a> {
+    pub fn new(
+        context: BytecodeContext,
+        instruments: &'a UniqueNamesList<project::BrrSample>,
+        pitch_table: &'a PitchTable,
+        subroutines: &'a CompiledSubroutines,
+        subroutine_name_map: &'a dyn SubroutineNameMap,
+        driver_transpose: TransposeStartRange,
+    ) -> Bytecode<'a> {
+        Self::new_append_to_vec(
+            Vec::new(),
+            context,
+            instruments,
+            pitch_table,
+            subroutines,
+            subroutine_name_map,
+            driver_transpose,
+        )
+    }
+    pub fn new_append_to_vec(
+        vec: Vec<u8>,
+        context: BytecodeContext,
+        instruments: &'a UniqueNamesList<project::BrrSample>,
+        pitch_table: &'a PitchTable,
+        subroutines: &'a CompiledSubroutines,
+        subroutine_name_map: &'a dyn SubroutineNameMap,
+        driver_transpose: TransposeStartRange,
+    ) -> Bytecode<'a> {
+        Bytecode {
+            bytecode: vec,
+            instruments,
+            pitch_table,
+            subroutines,
+            subroutin_name_map: subroutine_name_map,
+            state: State {
+                tick_counter: TickCounter::new(0),
+                max_stack_depth: StackDepth(0),
+                tempo_changes: Vec::new(),
+                instrument_tuning: None,
+                instrument: InstrumentState::Unset,
+                transpose_range: TransposeRange::new(driver_transpose),
+                subroutine_transpose_range: match &context {
+                    BytecodeContext::SoundEffect => None,
+                    BytecodeContext::SongChannel { .. } => None,
+                    BytecodeContext::SongSubroutine { .. } => Some(TransposeRange::DISABLED),
+                    BytecodeContext::SfxSubroutine => Some(TransposeRange::DISABLED),
+                    BytecodeContext::MmlPrefix => None,
+                    #[cfg(feature = "test")]
+                    BytecodeContext::UnitTestAssembly
+                    | BytecodeContext::UnitTestAssemblySubroutine => None,
+                },
+                envelope: IeState::Unset,
+                prev_temp_gain: IeState::Unset,
+                early_release: IeState::Unset,
+                detune: match &context {
+                    BytecodeContext::SoundEffect => IeState::Known(DetuneValue::ZERO),
+                    BytecodeContext::SongChannel { .. } => IeState::Known(DetuneValue::ZERO),
+                    BytecodeContext::SongSubroutine { .. } => IeState::Unset,
+                    BytecodeContext::SfxSubroutine => IeState::Unset,
+                    BytecodeContext::MmlPrefix => IeState::Unset,
+                    #[cfg(feature = "test")]
+                    BytecodeContext::UnitTestAssembly
+                    | BytecodeContext::UnitTestAssemblySubroutine => IeState::Unset,
+                },
+                vibrato: match &context {
+                    BytecodeContext::SoundEffect => VibratoState::Disabled,
+                    BytecodeContext::SongChannel { .. } => VibratoState::Disabled,
+                    BytecodeContext::SongSubroutine { .. } => VibratoState::Unchanged,
+                    BytecodeContext::SfxSubroutine => VibratoState::Unchanged,
+                    BytecodeContext::MmlPrefix => VibratoState::Disabled,
+                    #[cfg(feature = "test")]
+                    BytecodeContext::UnitTestAssembly
+                    | BytecodeContext::UnitTestAssemblySubroutine => VibratoState::Disabled,
+                },
+                prev_slurred_note: SlurredNoteState::Unchanged,
+                instrument_hint: None,
+                no_instrument_notes: Note::MAX..=Note::MIN,
+                unknown_transpose_no_instrument_notes: UnknownTransposeNoInstrumentNotes::new(),
+                no_instrument_pitch_or_noise: false,
+            },
+            loop_stack: Vec::new(),
+            asm_block_stack_len: 0,
+            show_missing_set_instrument_error: match &context {
+                BytecodeContext::SoundEffect => true,
+                BytecodeContext::SongChannel { .. } => true,
+                BytecodeContext::SongSubroutine { .. } => false,
+                BytecodeContext::SfxSubroutine => false,
+                BytecodeContext::MmlPrefix => false,
+                #[cfg(feature = "test")]
+                BytecodeContext::UnitTestAssembly | BytecodeContext::UnitTestAssemblySubroutine => {
+                    false
+                }
+            },
+            context,
+        }
+    }
+    pub fn get_context(&self) -> &BytecodeContext {
+        &self.context
+    }
+    pub fn get_state(&self) -> &State {
+        &self.state
+    }
+    pub fn get_instrument(&self) -> Option<&project::BrrSample> {
+        self.state
+            .instrument
+            .instrument_id()
+            .and_then(|i| self.instruments.get_index(i.as_u8().into()))
+    }
+    pub fn get_tick_counter(&self) -> TickCounter {
+        self.state.tick_counter
+    }
+    pub fn get_tick_counter_with_loop_flag(&self) -> TickCounterWithLoopFlag {
+        TickCounterWithLoopFlag {
+            ticks: self.state.tick_counter,
+            in_loop: self.is_in_loop(),
+        }
+    }
+    pub fn is_driver_transpose_active(&self) -> bool {
+        self.state.transpose_range.is_active()
+    }
+    pub fn is_in_loop(&self) -> bool {
+        !self.loop_stack.is_empty()
+    }
+    pub fn can_loop(&self) -> bool {
+        self.loop_stack.len() < BC_CHANNEL_STACK_SIZE / BC_STACK_BYTES_PER_LOOP
+    }
+    pub fn get_stack_depth(&self) -> StackDepth {
+        StackDepth(
+            (self.loop_stack.len() * BC_STACK_BYTES_PER_LOOP)
+                .try_into()
+                .unwrap_or(u32::MAX),
+        )
+    }
+    pub fn get_bytecode_len(&self) -> usize {
+        self.bytecode.len()
+    }
+    pub fn _song_loop_point(&mut self, analysis: &LoopAnalysis) {
+        assert!(matches!(self.context, BytecodeContext::SongChannel { .. }));
+        assert_eq!(self.get_stack_depth(), StackDepth(0));
+        self.state.song_loop(analysis, self.pitch_table);
+    }
+    pub fn _start_asm_block(&mut self) {
+        debug_assert_eq!(self.asm_block_stack_len, 0);
+        self.asm_block_stack_len = self.loop_stack.len();
+    }
+    pub fn _end_asm_block(&mut self) -> Result<(), BytecodeError> {
+        let expected_stack_len = self.asm_block_stack_len;
+        self.asm_block_stack_len = 0;
+        if self.loop_stack.len() <= expected_stack_len {
+            Ok(())
+        } else {
+            Err(BytecodeError::MissingEndLoopInAsmBlock)
+        }
+    }
+    fn emit_length_bytecode(&mut self, length: impl ToBcLength) {
+        match length.to_bc_length().0 {
+            l @ 1..=0xff => self.bytecode.push(l.try_into().unwrap()),
+            l @ 0x100..=0xffff => {
+                let [h, l] = l.to_be_bytes();
+                self.bytecode.extend_from_slice(&[0, h, l]);
+            }
+            0 => unreachable!(),
+        }
+    }
+    pub fn bytecode(
+        mut self,
+        terminator: BcTerminator,
+    ) -> Result<(Vec<u8>, State), (BytecodeError, Vec<u8>)> {
+        if !self.loop_stack.is_empty() {
+            return Err((
+                BytecodeError::OpenLoopStack(self.loop_stack.len()),
+                self.bytecode,
+            ));
+        }
+        if terminator.is_return() && !self.context.is_subroutine() {
+            return Err((BytecodeError::ReturnInNonSubroutine, self.bytecode));
+        }
+        if let BcTerminator::TailSubroutineCall(s) = &terminator {
+            if let Err(e) = self._update_subtroutine_state_excluding_stack_depth(s) {
+                return Err((e, self.bytecode));
+            }
+        }
+        match terminator {
+            BcTerminator::DisableChannel => {
+                emit_bytecode!(self, opcodes::DISABLE_CHANNEL);
+            }
+            BcTerminator::ReturnFromSubroutine => {
+                emit_bytecode!(self, opcodes::RETURN_FROM_SUBROUTINE);
+            }
+            BcTerminator::ReturnFromSubroutineAndDisableVibrato => {
+                self.state.vibrato.disable();
+                emit_bytecode!(self, opcodes::RETURN_FROM_SUBROUTINE_AND_DISABLE_VIBRATO);
+            }
+            BcTerminator::Goto(pos) => {
+                match (u16::try_from(self.bytecode.len()), u16::try_from(pos)) {
+                    (Ok(inst_ptr), Ok(pos)) => {
+                        let o = pos.wrapping_sub(inst_ptr).wrapping_sub(2).to_le_bytes();
+                        emit_bytecode!(self, opcodes::GOTO_RELATIVE, o[0], o[1]);
+                    }
+                    _ => {
+                        emit_bytecode!(self, opcodes::DISABLE_CHANNEL);
+                        return Err((BytecodeError::GotoRelativeOutOfBounds, self.bytecode));
+                    }
+                }
+            }
+            BcTerminator::TailSubroutineCall(s) => match u16::try_from(self.bytecode.len()) {
+                Ok(inst_ptr) => {
+                    let pos = s.bytecode_offset;
+                    let o = pos.wrapping_sub(inst_ptr).wrapping_sub(2).to_le_bytes();
+                    emit_bytecode!(self, opcodes::GOTO_RELATIVE, o[0], o[1]);
+                }
+                Err(_) => {
+                    emit_bytecode!(self, opcodes::DISABLE_CHANNEL);
+                    return Err((BytecodeError::GotoRelativeOutOfBounds, self.bytecode));
+                }
+            },
+        }
+        Ok((self.bytecode, self.state))
+    }
+    fn _test_note_in_range(&mut self, note: Note) -> Result<(), BytecodeError> {
+        #[cfg(feature = "test")]
+        if self.context.is_unit_test_assembly() {
+            return Ok(());
+        }
+        match self.state.instrument {
+            InstrumentState::Hint(..) | InstrumentState::Unset => {
+                let s = &self.state;
+                match s.is_transpose_known() {
+                    TransposeKnownResult::Known { min, max } => {
+                        let (min, max) = note.add_transpose_range(min, max)?;
+                        self.state.no_instrument_notes.extend_note(min);
+                        self.state.no_instrument_notes.extend_note(max);
+                    }
+                    TransposeKnownResult::Unknown { min, max } => {
+                        self.state
+                            .unknown_transpose_no_instrument_notes
+                            .extend_note(note, min, max);
+                    }
+                    TransposeKnownResult::Overflow => {}
+                }
+            }
+            InstrumentState::Known(..) | InstrumentState::Multiple(..) => {}
+        }
+        match &self.state.instrument {
+            InstrumentState::Known(_, inst_range)
+            | InstrumentState::Multiple(inst_range)
+            | InstrumentState::Hint(_, inst_range) => match self.state.transpose_range {
+                TransposeRange::Set { min: 0, max: 0 } => {
+                    if inst_range.contains(&note) {
+                        Ok(())
+                    } else if !inst_range.is_empty() {
+                        Err(BytecodeError::NoteOutOfRange(note, inst_range.clone()))
+                    } else {
+                        Err(BytecodeError::NoteOutOfRangeEmptyNoteRange(note))
+                    }
+                }
+                TransposeRange::Set {
+                    min: tmin,
+                    max: tmax,
+                } => {
+                    let (min, max) = note.add_transpose_range(tmin, tmax)?;
+                    if inst_range.contains(&min) && inst_range.contains(&max) {
+                        Ok(())
+                    } else if !inst_range.is_empty() {
+                        Err(BytecodeError::TransposedNoteOutOfRange {
+                            note,
+                            transpose: tmin..=tmax,
+                            inst_range: inst_range.clone(),
+                        })
+                    } else {
+                        Err(BytecodeError::NoteOutOfRangeEmptyNoteRange(note))
+                    }
+                }
+                TransposeRange::Overflow => Ok(()),
+            },
+            InstrumentState::Unset => {
+                if self.show_missing_set_instrument_error {
+                    self.show_missing_set_instrument_error = false;
+                    Err(BytecodeError::CannotPlayNoteBeforeSettingInstrument)
+                } else {
+                    Ok(())
+                }
+            }
+        }
+    }
+    fn _test_instrument_set(&mut self) -> Result<(), ()> {
+        #[cfg(feature = "test")]
+        if self.context.is_unit_test_assembly() {
+            return Ok(());
+        }
+        match &self.state.instrument {
+            InstrumentState::Known(_, _)
+            | InstrumentState::Multiple(_)
+            | InstrumentState::Hint(_, _) => Ok(()),
+            InstrumentState::Unset => {
+                self.state.no_instrument_pitch_or_noise = true;
+                if self.show_missing_set_instrument_error {
+                    self.show_missing_set_instrument_error = false;
+                    Err(())
+                } else {
+                    Ok(())
+                }
+            }
+        }
+    }
+    pub fn wait(&mut self, length: BcTicksNoKeyOff) {
+        self.state.tick_counter += length.to_tick_count();
+        emit_bytecode!(self, opcodes::WAIT);
+        self.emit_length_bytecode(length);
+    }
+    pub fn rest(&mut self, length: BcTicksKeyOff) {
+        self.state.tick_counter += length.to_tick_count();
+        self.state.prev_slurred_note = SlurredNoteState::None;
+        emit_bytecode!(self, opcodes::REST);
+        self.emit_length_bytecode(length);
+    }
+    pub fn play_pitch(
+        &mut self,
+        pitch: PlayPitchPitch,
+        length: PlayNoteTicks,
+    ) -> Result<(), BytecodeError> {
+        self._test_instrument_set()
+            .map_err(|_| BytecodeError::CannotPlayPitchBeforeSettingInstrument)?;
+        self.state.tick_counter += length.to_tick_count();
+        self.state.prev_slurred_note = match length {
+            PlayNoteTicks::KeyOff(_) => SlurredNoteState::None,
+            PlayNoteTicks::NoKeyOff(_) => SlurredNoteState::SlurredPitch(pitch),
+        };
+        let key_off_bit = match length {
+            PlayNoteTicks::NoKeyOff(_) => 0,
+            PlayNoteTicks::KeyOff(_) => 1,
+        };
+        let pitch = pitch.as_u16().to_le_bytes();
+        let arg1 = pitch[0];
+        let arg2 = (pitch[1] << 1) | key_off_bit;
+        emit_bytecode!(self, opcodes::PLAY_PITCH, arg1, arg2);
+        self.emit_length_bytecode(length);
+        Ok(())
+    }
+    pub fn play_noise(
+        &mut self,
+        frequency: NoiseFrequency,
+        length: PlayNoteTicks,
+    ) -> Result<(), BytecodeError> {
+        self._test_instrument_set()
+            .map_err(|_| BytecodeError::CannotPlayNoiseBeforeSettingInstrument)?;
+        self.state.tick_counter += length.to_tick_count();
+        self.state.prev_slurred_note = match length {
+            PlayNoteTicks::KeyOff(_) => SlurredNoteState::None,
+            PlayNoteTicks::NoKeyOff(_) => SlurredNoteState::SlurredNoise,
+        };
+        let key_off_bit = match length {
+            PlayNoteTicks::NoKeyOff(_) => 0,
+            PlayNoteTicks::KeyOff(_) => 1,
+        };
+        let arg = (frequency.as_u8() << 1) | key_off_bit;
+        emit_bytecode!(self, opcodes::PLAY_NOISE, arg);
+        self.emit_length_bytecode(length);
+        Ok(())
+    }
+    pub fn disable_noise(&mut self) {
+        emit_bytecode!(
+            self,
+            opcodes::MISCELLANEOUS,
+            MiscInstruction::DisableNoise.as_u8()
+        )
+    }
+    pub fn play_note(&mut self, note: Note, length: PlayNoteTicks) -> Result<(), BytecodeError> {
+        let r = self._test_note_in_range(note);
+        self.state.tick_counter += length.to_tick_count();
+        self.state.set_prev_slurred_note(note, length);
+        let opcode = NoteOpcode::new(note, &length);
+        emit_bytecode!(self, opcode.opcode);
+        self.emit_length_bytecode(length);
+        r
+    }
+    pub fn portamento(
+        &mut self,
+        note: Note,
+        velocity: PortamentoVelocity,
+        length: PlayNoteTicks,
+    ) -> Result<(), BytecodeError> {
+        let r = self._test_note_in_range(note);
+        self.state.tick_counter += length.to_tick_count();
+        self.state.set_prev_slurred_note(note, length);
+        let note_param = NoteOpcode::new(note, &length);
+        let speed = velocity.pitch_offset_per_tick();
+        if velocity.is_negative() {
+            emit_bytecode!(self, opcodes::PORTAMENTO_DOWN, note_param, speed);
+        } else {
+            emit_bytecode!(self, opcodes::PORTAMENTO_UP, note_param, speed);
+        }
+        self.emit_length_bytecode(length);
+        r
+    }
+    pub fn portamento_calc(
+        &mut self,
+        note: Note,
+        slide_ticks: PortamentoSlideTicks,
+        length: PlayNoteTicks,
+    ) -> Result<(), BytecodeError> {
+        let r = self._test_note_in_range(note);
+        self.state.tick_counter += length.to_tick_count();
+        self.state.set_prev_slurred_note(note, length);
+        let note_param = NoteOpcode::new(note, &length);
+        emit_bytecode!(
+            self,
+            opcodes::PORTAMENTO_CALC,
+            note_param,
+            slide_ticks.as_u8(),
+        );
+        self.emit_length_bytecode(length);
+        r
+    }
+    pub fn portamento_pitch(
+        &mut self,
+        target: PlayPitchPitch,
+        velocity: PortamentoVelocity,
+        length: PlayNoteTicks,
+    ) -> Result<(), BytecodeError> {
+        self._test_instrument_set()
+            .map_err(|_| BytecodeError::CannotPlayPitchBeforeSettingInstrument)?;
+        self.state.tick_counter += length.to_tick_count();
+        self.state.prev_slurred_note = match length {
+            PlayNoteTicks::KeyOff(_) => SlurredNoteState::None,
+            PlayNoteTicks::NoKeyOff(_) => SlurredNoteState::SlurredPitch(target),
+        };
+        let key_off_bit = match length {
+            PlayNoteTicks::NoKeyOff(_) => 0,
+            PlayNoteTicks::KeyOff(_) => 1,
+        };
+        let opcode = if velocity.is_negative() {
+            opcodes::PORTAMENTO_PITCH_DOWN
+        } else {
+            opcodes::PORTAMENTO_PITCH_UP
+        };
+        let target = target.as_u16().to_le_bytes();
+        let arg1 = target[0];
+        let arg2 = (target[1] << 1) | key_off_bit;
+        let speed = velocity.pitch_offset_per_tick();
+        emit_bytecode!(self, opcode, arg1, arg2, speed);
+        self.emit_length_bytecode(length);
+        Ok(())
+    }
+    pub fn portamento_pitch_calc(
+        &mut self,
+        target: PlayPitchPitch,
+        slide_ticks: PortamentoSlideTicks,
+        length: PlayNoteTicks,
+    ) -> Result<(), BytecodeError> {
+        self._test_instrument_set()
+            .map_err(|_| BytecodeError::CannotPlayPitchBeforeSettingInstrument)?;
+        self.state.tick_counter += length.to_tick_count();
+        self.state.prev_slurred_note = match length {
+            PlayNoteTicks::KeyOff(_) => SlurredNoteState::None,
+            PlayNoteTicks::NoKeyOff(_) => SlurredNoteState::SlurredPitch(target),
+        };
+        let key_off_bit = match length {
+            PlayNoteTicks::NoKeyOff(_) => 0,
+            PlayNoteTicks::KeyOff(_) => 1,
+        };
+        let target = target.as_u16().to_le_bytes();
+        let arg1 = target[0];
+        let arg2 = (target[1] << 1) | key_off_bit;
+        emit_bytecode!(
+            self,
+            opcodes::PORTAMENTO_PITCH_CALC,
+            arg1,
+            arg2,
+            slide_ticks.as_u8(),
+        );
+        self.emit_length_bytecode(length);
+        Ok(())
+    }
+    pub fn set_vibrato_depth_and_play_note(
+        &mut self,
+        pitch_offset_per_tick: VibratoPitchOffsetPerTick,
+        note: Note,
+        length: PlayNoteTicks,
+    ) -> Result<(), BytecodeError> {
+        let r = self._test_note_in_range(note);
+        self.state.tick_counter += length.to_tick_count();
+        self.state.set_prev_slurred_note(note, length);
+        self.state.vibrato.set_depth(pitch_offset_per_tick);
+        let play_note_opcode = NoteOpcode::new(note, &length);
+        emit_bytecode!(
+            self,
+            opcodes::SET_VIBRATO_DEPTH_AND_PLAY_NOTE,
+            pitch_offset_per_tick.as_u8(),
+            play_note_opcode,
+        );
+        self.emit_length_bytecode(length);
+        r
+    }
+    pub fn set_vibrato(
+        &mut self,
+        pitch_offset_per_tick: VibratoPitchOffsetPerTick,
+        quarter_wavelength_ticks: VibratoQuarterWavelengthInTicks,
+    ) {
+        self.state.vibrato = VibratoState::Set(
+            pitch_offset_per_tick,
+            quarter_wavelength_ticks,
+            VibratoDelayTicks::new(0),
+        );
+        emit_bytecode!(
+            self,
+            opcodes::SET_VIBRATO,
+            pitch_offset_per_tick.as_u8(),
+            quarter_wavelength_ticks.as_u8()
+        );
+    }
+    pub fn set_vibrato_with_delay(
+        &mut self,
+        pitch_offset_per_tick: VibratoPitchOffsetPerTick,
+        quarter_wavelength_ticks: VibratoQuarterWavelengthInTicks,
+        delay: VibratoDelayTicks,
+    ) {
+        self.state.vibrato =
+            VibratoState::Set(pitch_offset_per_tick, quarter_wavelength_ticks, delay);
+        match delay.as_u8() {
+            0 => {
+                emit_bytecode!(
+                    self,
+                    opcodes::SET_VIBRATO,
+                    pitch_offset_per_tick.as_u8(),
+                    quarter_wavelength_ticks.as_u8()
+                )
+            }
+            delay => {
+                emit_bytecode!(
+                    self,
+                    opcodes::SET_VIBRATO_WITH_DELAY,
+                    pitch_offset_per_tick.as_u8(),
+                    delay,
+                    quarter_wavelength_ticks.as_u8()
+                )
+            }
+        }
+    }
+    pub fn disable_vibrato(&mut self) {
+        self.state.vibrato.disable();
+        emit_bytecode!(self, opcodes::SET_VIBRATO, 0u8, 0u8);
+    }
+    pub(crate) fn set_subroutine_instrument_hint(
+        &mut self,
+        id: InstrumentId,
+        envelope: Option<Envelope>,
+    ) -> Result<(), ChannelError> {
+        if self.state.instrument_hint.is_some() {
+            return Err(ChannelError::InstrumentHintAlreadySet);
+        }
+        if !self.context.is_subroutine() {
+            return Err(ChannelError::InstrumentHintOnlyAllowedInSubroutines);
+        }
+        match &self.state.instrument {
+            InstrumentState::Unset => {}
+            InstrumentState::Hint(..) => {}
+            InstrumentState::Known(..) | InstrumentState::Multiple(..) => {
+                return Err(ChannelError::InstrumentHintInstrumentAlreadySet);
+            }
+        }
+        match self.instruments.get_index(id.as_u8().into()) {
+            Some(s) => match &s.pitches {
+                Some(BrrSamplePitches::Notes { tuning, .. })
+                | Some(BrrSamplePitches::Octaves { tuning, .. }) => {
+                    let (pto, range) = self.pitch_table.instrument_pto_and_note_range(id);
+                    self.state.instrument = InstrumentState::Hint(id, range);
+                    self.state.instrument_tuning = Some(pto);
+                    self.state.instrument_hint =
+                        Some((id, envelope, InstrumentHintFreq::from_tuning(tuning)));
+                    Ok(())
+                }
+                Some(BrrSamplePitches::SampleRates { .. }) | None => {
+                    Err(ChannelError::CannotSetInstrumentHintNoTuning)
+                }
+            },
+            None => Err(ChannelError::CannotSetInstrumentHintForUnknown),
+        }
+    }
+    fn _set_state_instrument_and_note_range(&mut self, instrument: InstrumentId) {
+        let (pto, note_range) = self.pitch_table.instrument_pto_and_note_range(instrument);
+        self.state.instrument = InstrumentState::Known(instrument, note_range);
+        self.state.instrument_tuning = Some(pto);
+    }
+    pub fn set_instrument(&mut self, instrument: InstrumentId) {
+        self._set_state_instrument_and_note_range(instrument);
+        self.state.envelope = match self.instruments.get_index(instrument.as_u8().into()) {
+            Some(i) => IeState::Known(i.envelope),
+            None => IeState::Unknown,
+        };
+        emit_bytecode!(self, opcodes::SET_INSTRUMENT, instrument.as_u8());
+    }
+    pub fn set_instrument_and_adsr(&mut self, instrument: InstrumentId, adsr: Adsr) {
+        self._set_state_instrument_and_note_range(instrument);
+        self.state.envelope = IeState::Known(Envelope::Adsr(adsr));
+        emit_bytecode!(
+            self,
+            opcodes::SET_INSTRUMENT_AND_ADSR_OR_GAIN,
+            instrument.as_u8(),
+            adsr.adsr1(),
+            adsr.adsr2()
+        );
+    }
+    pub fn set_instrument_and_gain(&mut self, instrument: InstrumentId, gain: Gain) {
+        self._set_state_instrument_and_note_range(instrument);
+        self.state.envelope = IeState::Known(Envelope::Gain(gain));
+        emit_bytecode!(
+            self,
+            opcodes::SET_INSTRUMENT_AND_ADSR_OR_GAIN,
+            instrument.as_u8(),
+            0u8,
+            gain.value()
+        );
+    }
+    pub fn set_adsr(&mut self, adsr: Adsr) {
+        self.state.envelope = IeState::Known(Envelope::Adsr(adsr));
+        emit_bytecode!(self, opcodes::SET_ADSR, adsr.adsr1(), adsr.adsr2());
+    }
+    pub fn set_gain(&mut self, gain: Gain) {
+        self.state.envelope = IeState::Known(Envelope::Gain(gain));
+        emit_bytecode!(self, opcodes::SET_GAIN, gain.value());
+    }
+    pub fn set_temp_gain(&mut self, gain: TempGain) {
+        self.state.prev_temp_gain = IeState::Known(gain);
+        emit_bytecode!(self, opcodes::SET_TEMP_GAIN, gain.as_u8());
+    }
+    pub fn set_temp_gain_and_wait(&mut self, gain: TempGain, length: BcTicksNoKeyOff) {
+        self.state.prev_temp_gain = IeState::Known(gain);
+        self.state.tick_counter += length.to_tick_count();
+        emit_bytecode!(self, opcodes::SET_TEMP_GAIN_AND_WAIT, gain.as_u8(),);
+        self.emit_length_bytecode(length);
+    }
+    pub fn set_temp_gain_and_rest(&mut self, gain: TempGain, length: BcTicksKeyOff) {
+        self.state.prev_temp_gain = IeState::Known(gain);
+        self.state.tick_counter += length.to_tick_count();
+        self.state.prev_slurred_note = SlurredNoteState::None;
+        emit_bytecode!(self, opcodes::SET_TEMP_GAIN_AND_REST, gain.as_u8(),);
+        self.emit_length_bytecode(length);
+    }
+    pub fn reuse_temp_gain(&mut self) {
+        emit_bytecode!(self, opcodes::REUSE_TEMP_GAIN);
+    }
+    pub fn reuse_temp_gain_and_wait(&mut self, length: BcTicksNoKeyOff) {
+        self.state.tick_counter += length.to_tick_count();
+        emit_bytecode!(self, opcodes::REUSE_TEMP_GAIN_AND_WAIT);
+        self.emit_length_bytecode(length);
+    }
+    pub fn reuse_temp_gain_and_rest(&mut self, length: BcTicksKeyOff) {
+        self.state.tick_counter += length.to_tick_count();
+        self.state.prev_slurred_note = SlurredNoteState::None;
+        emit_bytecode!(self, opcodes::REUSE_TEMP_GAIN_AND_REST);
+        self.emit_length_bytecode(length);
+    }
+    pub fn disable_early_release(&mut self) {
+        self.state.early_release = IeState::Known(None);
+        emit_bytecode!(self, opcodes::SET_EARLY_RELEASE_NO_MINIMUM, 0u8, 0u8);
+    }
+    pub fn set_early_release_no_minimum(&mut self, ticks: EarlyReleaseTicks, gain: OptionalGain) {
+        let min = EarlyReleaseMinTicks::MIN;
+        self.state.early_release = IeState::Known(Some((ticks, min, gain)));
+        emit_bytecode!(
+            self,
+            opcodes::SET_EARLY_RELEASE_NO_MINIMUM,
+            ticks.bc_argument(),
+            gain.as_u8()
+        );
+    }
+    pub fn set_early_release(
+        &mut self,
+        ticks: EarlyReleaseTicks,
+        min: EarlyReleaseMinTicks,
+        gain: OptionalGain,
+    ) {
+        if min == EarlyReleaseMinTicks::MIN {
+            self.set_early_release_no_minimum(ticks, gain);
+        } else {
+            self.state.early_release = IeState::Known(Some((ticks, min, gain)));
+            emit_bytecode!(
+                self,
+                opcodes::SET_EARLY_RELEASE,
+                ticks.bc_argument(),
+                min.bc_argument(),
+                gain.as_u8()
+            );
+        }
+    }
+    pub fn set_transpose(&mut self, transpose: Transpose) {
+        self.state.set_transpose(transpose);
+        emit_bytecode!(self, opcodes::SET_TRANSPOSE, transpose.as_i8());
+    }
+    pub fn adjust_transpose(&mut self, adjust: RelativeTranspose) -> Result<(), BytecodeError> {
+        if adjust.as_i8() != 0 {
+            self.state.adjust_transpose(adjust);
+            emit_bytecode!(self, opcodes::ADJUST_TRANSPOSE, adjust.as_i8());
+        }
+        match self.state.transpose_range {
+            TransposeRange::Set { .. } => Ok(()),
+            TransposeRange::Overflow => {
+                if !self.is_in_loop() {
+                    Err(BytecodeError::DriverTransposeOverflows)
+                } else {
+                    Err(BytecodeError::DriverTransposeOverflowsInLoop)
+                }
+            }
+        }
+    }
+    pub fn disable_transpose(&mut self) {
+        emit_bytecode!(self, opcodes::SET_TRANSPOSE, 0i8);
+    }
+    pub fn set_detune(&mut self, v: DetuneValue) {
+        self.state.detune = IeState::Known(v);
+        let (arg1, arg2) = v.as_i16().to_le_bytes().into();
+        match arg2 {
+            0x00 => emit_bytecode!(self, opcodes::SET_DETUNE_P8, arg1),
+            0xff => emit_bytecode!(self, opcodes::SET_DETUNE_N8, arg1),
+            _ => emit_bytecode!(self, opcodes::SET_DETUNE_I16, arg1, arg2),
+        }
+    }
+    pub fn disable_detune(&mut self) {
+        self.set_detune(DetuneValue::ZERO);
+    }
+    pub fn adjust_volume(&mut self, v: RelativeVolume) {
+        emit_bytecode!(self, opcodes::ADJUST_VOLUME, v.as_i8());
+    }
+    pub fn set_volume(&mut self, volume: Volume) {
+        emit_bytecode!(self, opcodes::SET_VOLUME, volume.as_u8());
+    }
+    pub fn adjust_pan(&mut self, p: RelativePan) {
+        emit_bytecode!(self, opcodes::ADJUST_PAN, p.as_i8());
+    }
+    pub fn set_pan(&mut self, pan: Pan) {
+        emit_bytecode!(self, opcodes::SET_PAN, pan.as_u8());
+    }
+    pub fn set_pan_and_volume(&mut self, pan: Pan, volume: Volume) {
+        emit_bytecode!(
+            self,
+            opcodes::SET_PAN_AND_VOLUME,
+            pan.as_u8(),
+            volume.as_u8()
+        );
+    }
+    pub fn set_channel_invert(&mut self, flags: InvertFlags) {
+        emit_bytecode!(
+            self,
+            opcodes::SET_CHANNEL_OR_ECHO_INVERT,
+            flags.into_bytecode_value(true)
+        )
+    }
+    fn _pan_vol_slide_offset_per_tick<A, T>(&mut self, amount: A, ticks: T) -> (u8, u8)
+    where
+        A: SignedValueNewType<ValueType = i16>,
+        T: UnsignedValueNewType<ValueType = u32>,
+    {
+        let u16_ticks = u16::try_from(ticks.value()).unwrap();
+        let offset_per_tick = ((amount.value().unsigned_abs() << 8) | 0xff) / u16_ticks;
+        debug_assert_eq!(
+            offset_per_tick.wrapping_mul(u16_ticks).to_le_bytes()[1],
+            u8::try_from(amount.value().unsigned_abs()).unwrap()
+        );
+        debug_assert_eq!(
+            u16::MAX
+                .wrapping_sub(offset_per_tick.wrapping_mul(u16_ticks))
+                .to_le_bytes()[1],
+            u8::MAX - u8::try_from(amount.value().unsigned_abs()).unwrap()
+        );
+        offset_per_tick.to_le_bytes().into()
+    }
+    pub fn volume_slide(&mut self, amount: VolumeSlideAmount, ticks: VolumeSlideTicks) {
+        let opt = self._pan_vol_slide_offset_per_tick(amount, ticks);
+        let opcode = match amount.is_negative() {
+            false => opcodes::VOLUME_SLIDE_UP,
+            true => opcodes::VOLUME_SLIDE_DOWN,
+        };
+        emit_bytecode!(self, opcode, ticks.driver_value(), opt.0, opt.1);
+    }
+    pub fn pan_slide(&mut self, amount: PanSlideAmount, ticks: PanSlideTicks) {
+        let opt = self._pan_vol_slide_offset_per_tick(amount, ticks);
+        let opcode = match amount.is_negative() {
+            false => opcodes::PAN_SLIDE_UP,
+            true => opcodes::PAN_SLIDE_DOWN,
+        };
+        emit_bytecode!(self, opcode, ticks.driver_value(), opt.0, opt.1);
+    }
+    fn _tremolo_panbrello<A, T>(&mut self, opcode: u8, amplitude: A, quarter_wavelength_ticks: T)
+    where
+        A: UnsignedValueNewType<ValueType = u8>,
+        T: UnsignedValueNewType<ValueType = u8>,
+    {
+        const SUB_VALUE: u16 = 0x7f;
+        let u16_ticks: u16 = quarter_wavelength_ticks.value().into();
+        let offset_per_tick = ((u16::from(amplitude.value()) << 8) | SUB_VALUE) / u16_ticks;
+        let arg_2 = offset_per_tick.to_le_bytes()[0];
+        let arg_3 = offset_per_tick.to_le_bytes()[1];
+        debug_assert_eq!(
+            u16::from_le_bytes([SUB_VALUE as u8, 127])
+                .wrapping_add(offset_per_tick.wrapping_mul(u16_ticks))
+                .to_le_bytes()[1],
+            127 + amplitude.value()
+        );
+        debug_assert_eq!(
+            u16::from_le_bytes([SUB_VALUE as u8, 127])
+                .wrapping_add(offset_per_tick.wrapping_mul(u16_ticks))
+                .wrapping_sub(offset_per_tick.wrapping_mul(u16_ticks * 2))
+                .to_le_bytes()[1],
+            127 - amplitude.value()
+        );
+        emit_bytecode!(self, opcode, quarter_wavelength_ticks.value(), arg_2, arg_3);
+    }
+    pub fn tremolo(
+        &mut self,
+        amplitude: TremoloAmplitude,
+        quarter_wavelength_ticks: TremoloQuarterWavelengthInTicks,
+    ) {
+        self._tremolo_panbrello(opcodes::TREMOLO, amplitude, quarter_wavelength_ticks);
+    }
+    pub fn panbrello(
+        &mut self,
+        amplitude: PanbrelloAmplitude,
+        quarter_wavelength_ticks: PanbrelloQuarterWavelengthInTicks,
+    ) {
+        self._tremolo_panbrello(opcodes::PANBRELLO, amplitude, quarter_wavelength_ticks);
+    }
+    fn _pmod_instruction(
+        &mut self,
+        prefixed_instruction: MiscInstruction,
+    ) -> Result<(), BytecodeError> {
+        match self.context {
+            BytecodeContext::SongChannel { index, .. } => match u8::from(index) {
+                0 => Err(BytecodeError::PmodNotAllowedInChannelA),
+                1..=5 => {
+                    emit_bytecode!(self, opcodes::MISCELLANEOUS, prefixed_instruction.as_u8());
+                    Ok(())
+                }
+                6 | 7 => Err(BytecodeError::PmodNotAllowedInChannelsGH),
+                8.. => {
+                    panic!("Invalid song channel");
+                }
+            },
+            BytecodeContext::SongSubroutine { .. } | BytecodeContext::MmlPrefix => {
+                emit_bytecode!(self, opcodes::MISCELLANEOUS, prefixed_instruction.as_u8());
+                Ok(())
+            }
+            BytecodeContext::SfxSubroutine | BytecodeContext::SoundEffect => {
+                Err(BytecodeError::PmodNotAllowedInSoundEffect)
+            }
+            #[cfg(feature = "test")]
+            BytecodeContext::UnitTestAssembly | BytecodeContext::UnitTestAssemblySubroutine => {
+                emit_bytecode!(self, opcodes::MISCELLANEOUS, prefixed_instruction.as_u8());
+                Ok(())
+            }
+        }
+    }
+    pub fn enable_pmod(&mut self) -> Result<(), BytecodeError> {
+        self._pmod_instruction(MiscInstruction::EnablePmod)
+    }
+    pub fn disable_pmod(&mut self) -> Result<(), BytecodeError> {
+        self._pmod_instruction(MiscInstruction::DisablePmod)
+    }
+    pub fn enable_echo(&mut self) {
+        emit_bytecode!(self, opcodes::ENABLE_ECHO);
+    }
+    pub fn disable_echo(&mut self) {
+        emit_bytecode!(self, opcodes::DISABLE_ECHO);
+    }
+    pub fn start_loop(
+        &mut self,
+        loop_count: Option<LoopCount>,
+        analysis: &LoopAnalysis,
+    ) -> Result<(), BytecodeError> {
+        self.loop_stack.push(LoopState {
+            start_loop_count: loop_count,
+            start_loop_pos: self.bytecode.len(),
+            start_loop_transpose_range: self.state.transpose_range,
+            start_loop_subroutine_transpose_range: self.state.subroutine_transpose_range,
+            tick_counter_at_start_of_loop: self.state.tick_counter,
+            skip_last_loop: None,
+        });
+        self.state
+            .start_loop(self.loop_stack.len() - 1, analysis, self.pitch_table);
+        let loop_count = match loop_count {
+            Some(lc) => lc.0,
+            None => 0,
+        };
+        emit_bytecode!(self, opcodes::START_LOOP, loop_count);
+        let stack_depth = self.get_stack_depth();
+        self.state.max_stack_depth = max(self.state.max_stack_depth, stack_depth);
+        if stack_depth <= MAX_STACK_DEPTH {
+            Ok(())
+        } else {
+            Err(BytecodeError::StackOverflowInStartLoop(stack_depth.0))
+        }
+    }
+    const START_LOOP_INST_SIZE: usize = 2;
+    const SKIP_LAST_LOOP_INST_SIZE: usize = 2;
+    pub fn skip_last_loop(&mut self, analysis: &SkipLastLoopAnalysis) -> Result<(), BytecodeError> {
+        let loop_state = match self.loop_stack.last_mut() {
+            Some(l) => l,
+            None => return Err(BytecodeError::NotInALoop),
+        };
+        if loop_state.skip_last_loop.is_some() {
+            return Err(BytecodeError::MultipleSkipLastLoopInstructions);
+        }
+        if loop_state.start_loop_pos + Self::START_LOOP_INST_SIZE == self.bytecode.len() {
+            return Err(BytecodeError::NoInstructionsBeforeSkipLastLoop);
+        }
+        loop_state.skip_last_loop = Some(SkipLastLoop {
+            tick_counter: self.state.tick_counter,
+            bc_parameter_position: self.bytecode.len() + 1,
+            envelope: self.state.envelope,
+            prev_temp_gain: self.state.prev_temp_gain,
+            early_release: self.state.early_release,
+            detune: self.state.detune,
+            vibrato: self.state.vibrato,
+            prev_slurred_note: self.state.prev_slurred_note.clone(),
+        });
+        self.state.skip_last_loop(
+            analysis,
+            loop_state.start_loop_transpose_range,
+            loop_state.start_loop_subroutine_transpose_range,
+        );
+        emit_bytecode!(self, opcodes::SKIP_LAST_LOOP_U8, 0u8);
+        if self.loop_stack.len() > self.asm_block_stack_len {
+            Ok(())
+        } else {
+            Err(BytecodeError::CannotModifyLoopOutsideAsmBlock)
+        }
+    }
+    pub fn end_loop(
+        &mut self,
+        loop_count: Option<LoopCount>,
+        analysis: &LoopAnalysis,
+    ) -> Result<(), BytecodeError> {
+        let (start_loop_transpose_range, start_loop_subroutine_transpose_range) = self
+            .loop_stack
+            .last()
+            .map(|ls| {
+                (
+                    ls.start_loop_transpose_range,
+                    ls.start_loop_subroutine_transpose_range,
+                )
+            })
+            .unwrap_or((TransposeRange::DISABLED, None));
+        let r = self._end_loop(loop_count);
+        self.state.end_loop(
+            self.loop_stack.len(),
+            analysis,
+            start_loop_transpose_range,
+            start_loop_subroutine_transpose_range,
+            self.pitch_table,
+        );
+        r
+    }
+    fn _end_loop(&mut self, loop_count: Option<LoopCount>) -> Result<(), BytecodeError> {
+        let loop_state = match self.loop_stack.pop() {
+            Some(l) => l,
+            None => return Err(BytecodeError::NotInALoop),
+        };
+        let loop_count_u32 = match (loop_state.start_loop_count, &loop_count) {
+            (Some(start_lc), None) => start_lc.to_u32(),
+            (None, Some(end_lc)) => end_lc.to_u32(),
+            (None, None) => return Err(BytecodeError::MissingLoopCount),
+            (Some(_), Some(_)) => {
+                return Err(BytecodeError::CannotHaveLoopCountAtStartAndEndLoop);
+            }
+        };
+        {
+            let ticks_in_loop =
+                self.state.tick_counter.value() - loop_state.tick_counter_at_start_of_loop.value();
+            if ticks_in_loop == 0 {
+                return Err(BytecodeError::NoTicksInLoop);
+            }
+            let ticks_skipped_in_last_loop = match &loop_state.skip_last_loop {
+                Some(s) => {
+                    if s.bc_parameter_position - 1 + Self::SKIP_LAST_LOOP_INST_SIZE
+                        == self.bytecode.len()
+                    {
+                        return Err(BytecodeError::NoInstructionsAfterSkipLastLoop);
+                    }
+                    self.state.tick_counter.value() - s.tick_counter.value()
+                }
+                None => 0,
+            };
+            assert!(ticks_skipped_in_last_loop <= ticks_in_loop);
+            let ticks_to_add = ticks_in_loop
+                .checked_mul(loop_count_u32 - 1)
+                .and_then(|t| t.checked_sub(ticks_skipped_in_last_loop))
+                .unwrap_or(u32::MAX);
+            self.state.tick_counter += TickCounter::new(ticks_to_add);
+        }
+        if let Some(loop_count) = loop_count {
+            assert_eq!(
+                self.bytecode[loop_state.start_loop_pos],
+                opcodes::START_LOOP
+            );
+            self.bytecode[loop_state.start_loop_pos + 1] = loop_count.0;
+        }
+        if let Some(skip_last_loop) = loop_state.skip_last_loop {
+            let sll_param_pos = skip_last_loop.bc_parameter_position;
+            self.state.merge_skip_last_loop(skip_last_loop);
+            assert_eq!(self.bytecode[sll_param_pos - 1], opcodes::SKIP_LAST_LOOP_U8);
+            match self.bytecode.len() - sll_param_pos {
+                0 => {
+                    return Err(BytecodeError::InvalidSkipLastLoopParameter(0));
+                }
+                to_skip @ 1..=0xff => {
+                    self.bytecode[sll_param_pos] = u8::try_from(to_skip).unwrap();
+                }
+                to_skip @ 0x100..=0xffff => {
+                    let to_skip = u16::try_from(to_skip).unwrap();
+                    let (l, h) = to_skip.to_le_bytes().into();
+                    self.bytecode[sll_param_pos - 1] = opcodes::SKIP_LAST_LOOP_U16BE;
+                    self.bytecode.insert(sll_param_pos, h);
+                    self.bytecode[sll_param_pos + 1] = l;
+                    debug_assert!(self.loop_stack.iter().all(|c| match &c.skip_last_loop {
+                        Some(s) => s.bc_parameter_position < sll_param_pos,
+                        None => true,
+                    }));
+                }
+                err @ 0x1000.. => {
+                    return Err(BytecodeError::InvalidSkipLastLoopParameter(err));
+                }
+            }
+        }
+        emit_bytecode!(self, opcodes::END_LOOP);
+        if self.loop_stack.len() >= self.asm_block_stack_len {
+            Ok(())
+        } else {
+            Err(BytecodeError::MissingStartLoopInAsmBlock)
+        }
+    }
+    fn _update_subtroutine_state_excluding_stack_depth(
+        &mut self,
+        subroutine: &Subroutine,
+    ) -> Result<(), BytecodeError> {
+        let s = &subroutine.bc_state;
+        self.state.tick_counter += s.tick_counter;
+        let old_instrument = self.state.instrument.clone();
+        let old_transpose = self.state.transpose_range;
+        let old_transpose_known = self.state.is_transpose_known();
+        self.state
+            .merge_subroutine(s, &subroutine.analysis, self.pitch_table);
+        #[cfg(feature = "test")]
+        if self.context.is_unit_test_assembly() {
+            return Ok(());
+        }
+        if let Some(sub_hint_freq) = s.instrument_hint_freq() {
+            match old_instrument {
+                InstrumentState::Known(id, _) | InstrumentState::Hint(id, _) => {
+                    match self.instruments.get_index(id.as_u8().into()) {
+                        Some(s) => {
+                            match &s.pitches {
+                                Some(BrrSamplePitches::Notes { tuning, .. })
+                                | Some(BrrSamplePitches::Octaves { tuning, .. }) => {
+                                    let inst_freq = InstrumentHintFreq::from_tuning(tuning);
+                                    if sub_hint_freq != inst_freq {
+                                        return Err(BytecodeError::SubroutineInstrumentHintFrequencyMismatch {
+                                            subroutine: sub_hint_freq,
+                                            instrument: inst_freq,
+                                        });
+                                    }
+                                }
+                                Some(BrrSamplePitches::SampleRates { .. }) | None => {
+                                    return Err(BytecodeError::SubroutineInstrumentHintNoTuning);
+                                }
+                            }
+                        }
+                        None => {
+                            return Err(BytecodeError::SubroutineInstrumentHintNoInstrumentSet);
+                        }
+                    }
+                }
+                InstrumentState::Multiple(..) | InstrumentState::Unset => match self.context {
+                    BytecodeContext::SongSubroutine { .. } | BytecodeContext::SfxSubroutine => {
+                        self.state.instrument_hint = s.instrument_hint;
+                    }
+                    BytecodeContext::SongChannel { .. }
+                    | BytecodeContext::SoundEffect
+                    | BytecodeContext::MmlPrefix => {
+                        return Err(BytecodeError::SubroutineInstrumentHintNoInstrumentSet);
+                    }
+                    #[cfg(feature = "test")]
+                    BytecodeContext::UnitTestAssembly
+                    | BytecodeContext::UnitTestAssemblySubroutine => {}
+                },
+            }
+        }
+        if !s.no_instrument_notes.is_empty() || s.no_instrument_pitch_or_noise {
+            let sub_notes = &s.no_instrument_notes;
+            match &old_instrument {
+                InstrumentState::Unset => match self.context {
+                    BytecodeContext::SongChannel { .. } | BytecodeContext::SoundEffect => {
+                        return Err(BytecodeError::SubroutinePlaysNotesWithNoInstrument);
+                    }
+                    BytecodeContext::SongSubroutine { .. } | BytecodeContext::SfxSubroutine => {
+                        self.state.no_instrument_pitch_or_noise |= s.no_instrument_pitch_or_noise;
+                        self.state.no_instrument_notes.merge(sub_notes);
+                    }
+                    BytecodeContext::MmlPrefix => {
+                        return Err(BytecodeError::SubroutineCallInMmlPrefix);
+                    }
+                    #[cfg(feature = "test")]
+                    BytecodeContext::UnitTestAssembly
+                    | BytecodeContext::UnitTestAssemblySubroutine => {}
+                },
+                InstrumentState::Multiple(old_note_range)
+                | InstrumentState::Known(_, old_note_range)
+                | InstrumentState::Hint(_, old_note_range) => {
+                    if !sub_notes.is_empty()
+                        && (!old_note_range.contains(sub_notes.start())
+                            || !old_note_range.contains(sub_notes.end()))
+                    {
+                        return Err(BytecodeError::SubroutineNotesOutOfRange {
+                            subroutine_range: sub_notes.clone(),
+                            inst_range: old_note_range.clone(),
+                        });
+                    }
+                }
+            }
+        }
+        if !s.unknown_transpose_no_instrument_notes.is_empty() {
+            match old_instrument {
+                InstrumentState::Unset => match self.context {
+                    BytecodeContext::SongChannel { .. } | BytecodeContext::SoundEffect => {
+                        return Err(BytecodeError::SubroutinePlaysNotesWithNoInstrument);
+                    }
+                    BytecodeContext::SongSubroutine { .. } | BytecodeContext::SfxSubroutine => {
+                        self.state
+                            .unknown_transpose_no_instrument_notes
+                            .unknown_instrument_subroutine_call(
+                                &s.unknown_transpose_no_instrument_notes,
+                                old_transpose_known,
+                            );
+                    }
+                    BytecodeContext::MmlPrefix => {
+                        return Err(BytecodeError::SubroutineCallInMmlPrefix);
+                    }
+                    #[cfg(feature = "test")]
+                    BytecodeContext::UnitTestAssembly
+                    | BytecodeContext::UnitTestAssemblySubroutine => {}
+                },
+                InstrumentState::Multiple(old_inst_range)
+                | InstrumentState::Known(_, old_inst_range)
+                | InstrumentState::Hint(_, old_inst_range) => {
+                    s.unknown_transpose_no_instrument_notes
+                        .test_instrument_can_play_notes(old_transpose, old_inst_range)?;
+                }
+            }
+        }
+        Ok(())
+    }
+    fn _call_subroutine(
+        &mut self,
+        name: &str,
+        subroutine: &Subroutine,
+        disable_vibraro: bool,
+    ) -> Result<(), BytecodeError> {
+        match self.context {
+            BytecodeContext::SongSubroutine { .. } | BytecodeContext::SongChannel { .. } => {}
+            BytecodeContext::SfxSubroutine => {}
+            BytecodeContext::SoundEffect => {
+                if self.state.transpose_range.is_active() {
+                    return Err(BytecodeError::CannotCallSfxSubroutineWithDriverTranspose);
+                }
+            }
+            BytecodeContext::MmlPrefix => {
+                return Err(BytecodeError::SubroutineCallInMmlPrefix);
+            }
+            #[cfg(feature = "test")]
+            BytecodeContext::UnitTestAssembly | BytecodeContext::UnitTestAssemblySubroutine => {}
+        }
+        self._update_subtroutine_state_excluding_stack_depth(subroutine)?;
+        let stack_depth = StackDepth(
+            self.get_stack_depth().0
+                + BC_STACK_BYTES_PER_SUBROUTINE_CALL as u32
+                + subroutine.bc_state.max_stack_depth.0,
+        );
+        self.state.max_stack_depth = max(self.state.max_stack_depth, stack_depth);
+        if stack_depth > MAX_STACK_DEPTH {
+            return Err(BytecodeError::StackOverflowInSubroutineCall(
+                name.to_owned(),
+                stack_depth.0,
+            ));
+        }
+        let opcode = match disable_vibraro {
+            true => opcodes::CALL_SUBROUTINE_AND_DISABLE_VIBRATO,
+            false => opcodes::CALL_SUBROUTINE,
+        };
+        emit_bytecode!(self, opcode, subroutine.index);
+        Ok(())
+    }
+    pub fn call_subroutine_and_disable_vibrato(
+        &mut self,
+        name: &str,
+        subroutine: &Subroutine,
+    ) -> Result<(), BytecodeError> {
+        self.state.vibrato.disable();
+        self._call_subroutine(name, subroutine, true)
+    }
+    pub fn call_subroutine(
+        &mut self,
+        name: &str,
+        subroutine: &Subroutine,
+    ) -> Result<(), BytecodeError> {
+        self._call_subroutine(name, subroutine, false)
+    }
+    pub fn set_song_tick_clock(&mut self, tick_clock: TickClock) -> Result<(), BytecodeError> {
+        match self.context {
+            BytecodeContext::SoundEffect | BytecodeContext::SfxSubroutine => {
+                return Err(BytecodeError::CannotChangeTickClockInASoundEffect);
+            }
+            BytecodeContext::SongChannel { .. }
+            | BytecodeContext::SongSubroutine { .. }
+            | BytecodeContext::MmlPrefix => {}
+            #[cfg(feature = "test")]
+            BytecodeContext::UnitTestAssembly | BytecodeContext::UnitTestAssemblySubroutine => {}
+        }
+        self.state
+            .tempo_changes
+            .push((self.state.tick_counter, tick_clock));
+        emit_bytecode!(
+            self,
+            opcodes::MISCELLANEOUS,
+            MiscInstruction::SetSongTickClock.as_u8(),
+            tick_clock.into_driver_value()
+        );
+        Ok(())
+    }
+    fn _find_subroutine(&self, name: &'a str) -> Result<&'a Subroutine, BytecodeError> {
+        match self.subroutin_name_map.find_subroutine_index(name) {
+            Some(index) => match self.subroutines.get(index.into()) {
+                GetSubroutineResult::Compiled(_, s) => Ok(s),
+                GetSubroutineResult::NotCompiled(_) => {
+                    Err(BytecodeError::SubroutineRecursion(name.to_owned()))
+                }
+                GetSubroutineResult::CompileError(_) => {
+                    Err(BytecodeError::SubroutineHasError(name.to_owned()))
+                }
+                GetSubroutineResult::NotFound => {
+                    Err(BytecodeError::UnknownSubroutine(name.to_owned()))
+                }
+            },
+            None => match &self.context {
+                BytecodeContext::SongSubroutine { .. }
+                | BytecodeContext::SongChannel { .. }
+                | BytecodeContext::SfxSubroutine
+                | BytecodeContext::SoundEffect => {
+                    Err(BytecodeError::UnknownSubroutine(name.to_owned()))
+                }
+                BytecodeContext::MmlPrefix => Err(BytecodeError::NotAllowedToCallSubroutine),
+                #[cfg(feature = "test")]
+                BytecodeContext::UnitTestAssembly | BytecodeContext::UnitTestAssemblySubroutine => {
+                    Err(BytecodeError::UnknownSubroutine(name.to_owned()))
+                }
+            },
+        }
+    }
+    pub fn call_subroutine_str(&mut self, name: &str) -> Result<(), BytecodeError> {
+        self.call_subroutine(name, self._find_subroutine(name)?)
+    }
+    pub fn call_subroutine_and_disable_vibrato_str(
+        &mut self,
+        name: &str,
+    ) -> Result<(), BytecodeError> {
+        self.call_subroutine_and_disable_vibrato(name, self._find_subroutine(name)?)
+    }
+    fn _find_instrument(&self, name: &str) -> Result<InstrumentId, BytecodeError> {
+        match self.instruments.get_with_index(name) {
+            Some((i, _inst)) => match InstrumentId::try_from(i) {
+                Ok(inst) => Ok(inst),
+                Err(_) => Err(BytecodeError::InvalidInstrumentId),
+            },
+            None => Err(BytecodeError::UnknownInstrument(name.to_owned())),
+        }
+    }
+    pub fn set_instrument_str(&mut self, name: &str) -> Result<(), BytecodeError> {
+        self.set_instrument(self._find_instrument(name)?);
+        Ok(())
+    }
+    pub fn set_instrument_and_adsr_str(
+        &mut self,
+        name: &str,
+        adsr: Adsr,
+    ) -> Result<(), BytecodeError> {
+        self.set_instrument_and_adsr(self._find_instrument(name)?, adsr);
+        Ok(())
+    }
+    pub fn set_instrument_and_gain_str(
+        &mut self,
+        name: &str,
+        gain: Gain,
+    ) -> Result<(), BytecodeError> {
+        self.set_instrument_and_gain(self._find_instrument(name)?, gain);
+        Ok(())
+    }
+    pub fn set_main_volume(&mut self, efb: MainVolume) {
+        emit_bytecode!(
+            self,
+            opcodes::SET_OR_ADJUST_GLOBAL_I8,
+            (GLOBAL_I8_MAIN_VOLUME_INDEX << 1) | 1,
+            efb.as_i8()
+        );
+    }
+    pub fn adjust_main_volume(&mut self, adjust: RelativeMainVolume) {
+        if adjust.value() != 0 {
+            emit_bytecode!(
+                self,
+                opcodes::SET_OR_ADJUST_GLOBAL_I8,
+                GLOBAL_I8_MAIN_VOLUME_INDEX << 1,
+                adjust.as_i8()
+            );
+        }
+    }
+    pub fn adjust_main_volume_limit(&mut self, adjust: RelativeMainVolume, limit: MainVolume) {
+        if adjust.as_i8() != 0 {
+            emit_bytecode!(
+                self,
+                opcodes::ADJUST_GLOBAL_I8_LIMIT,
+                GLOBAL_I8_MAIN_VOLUME_INDEX,
+                adjust.as_i8(),
+                limit.as_i8()
+            );
+        }
+    }
+    pub fn set_echo_volume(&mut self, evol: EchoVolume) {
+        emit_bytecode!(self, opcodes::SET_ECHO_VOLUME, evol.as_u8());
+    }
+    pub fn set_stereo_echo_volume(&mut self, left: EchoVolume, right: EchoVolume) {
+        if left == right {
+            self.set_echo_volume(left);
+        } else {
+            emit_bytecode!(
+                self,
+                opcodes::SET_STEREO_ECHO_VOLUME,
+                left.as_u8(),
+                right.as_u8()
+            );
+        }
+    }
+    pub fn adjust_echo_volume(&mut self, relative: RelativeEchoVolume) {
+        if relative.as_i8() != 0 {
+            emit_bytecode!(self, opcodes::ADJUST_ECHO_VOLUME, relative.as_i8());
+        }
+    }
+    pub fn adjust_stereo_echo_volume(
+        &mut self,
+        left: RelativeEchoVolume,
+        right: RelativeEchoVolume,
+    ) {
+        if left == right {
+            self.adjust_echo_volume(left);
+        } else {
+            emit_bytecode!(
+                self,
+                opcodes::ADJUST_STEREO_ECHO_VOLUME,
+                left.as_i8(),
+                right.as_i8()
+            );
+        }
+    }
+    pub fn set_echo_feedback(&mut self, efb: EchoFeedback) {
+        emit_bytecode!(
+            self,
+            opcodes::SET_OR_ADJUST_GLOBAL_I8,
+            (GLOBAL_I8_EFB_INDEX << 1) | 1,
+            efb.as_i8()
+        );
+    }
+    pub fn adjust_echo_feedback(&mut self, adjust: RelativeEchoFeedback) {
+        if adjust.value() != 0 {
+            emit_bytecode!(
+                self,
+                opcodes::SET_OR_ADJUST_GLOBAL_I8,
+                GLOBAL_I8_EFB_INDEX << 1,
+                adjust.as_i8()
+            );
+        }
+    }
+    pub fn adjust_echo_feedback_limit(
+        &mut self,
+        adjust: RelativeEchoFeedback,
+        limit: EchoFeedback,
+    ) {
+        if adjust.as_i8() != 0 {
+            emit_bytecode!(
+                self,
+                opcodes::ADJUST_GLOBAL_I8_LIMIT,
+                GLOBAL_I8_EFB_INDEX,
+                adjust.as_i8(),
+                limit.as_i8()
+            );
+        }
+    }
+    pub fn set_fir_filter(&mut self, filter: [FirCoefficient; FIR_FILTER_SIZE]) {
+        emit_bytecode_array!(self, opcodes::SET_FIR_FILTER, filter);
+    }
+    pub fn set_fir_tap(&mut self, tap: FirTap, value: FirCoefficient) {
+        emit_bytecode!(
+            self,
+            opcodes::SET_OR_ADJUST_GLOBAL_I8,
+            (tap.as_u8() << 1) | 1,
+            value.as_i8()
+        );
+    }
+    pub fn adjust_fir_tap(&mut self, tap: FirTap, adjust: RelativeFirCoefficient) {
+        if adjust.as_i8() != 0 {
+            emit_bytecode!(
+                self,
+                opcodes::SET_OR_ADJUST_GLOBAL_I8,
+                tap.as_u8() << 1,
+                adjust.as_i8()
+            );
+        }
+    }
+    pub fn adjust_fir_tap_limit(
+        &mut self,
+        tap: FirTap,
+        adjust: RelativeFirCoefficient,
+        limit: FirCoefficient,
+    ) {
+        if adjust.as_i8() != 0 {
+            emit_bytecode!(
+                self,
+                opcodes::ADJUST_GLOBAL_I8_LIMIT,
+                tap.as_u8(),
+                adjust.as_i8(),
+                limit.as_i8()
+            );
+        }
+    }
+    pub fn set_echo_invert(&mut self, flags: InvertFlags) {
+        emit_bytecode!(
+            self,
+            opcodes::SET_CHANNEL_OR_ECHO_INVERT,
+            flags.into_bytecode_value(false)
+        )
+    }
+    pub fn set_echo_delay(&mut self, length: EchoLength) -> Result<(), BytecodeError> {
+        match self.context {
+            BytecodeContext::SongSubroutine { max_edl }
+            | BytecodeContext::SongChannel { max_edl, .. } => {
+                let edl = length.to_edl();
+                if edl.as_u8() <= max_edl.as_u8() {
+                    emit_bytecode!(
+                        self,
+                        opcodes::MISCELLANEOUS,
+                        MiscInstruction::SetEchoDelay.as_u8(),
+                        edl.as_u8()
+                    );
+                    Ok(())
+                } else {
+                    Err(BytecodeError::EchoLengthLargerThanMaxEdl { edl, max_edl })
+                }
+            }
+            BytecodeContext::SoundEffect | BytecodeContext::SfxSubroutine => {
+                Err(BytecodeError::CannotSetEchoDelayInSoundEffect)
+            }
+            BytecodeContext::MmlPrefix => Err(BytecodeError::CannotSetEchoDelayInMmlPrefix),
+            #[cfg(feature = "test")]
+            BytecodeContext::UnitTestAssembly | BytecodeContext::UnitTestAssemblySubroutine => {
+                emit_bytecode!(
+                    self,
+                    opcodes::MISCELLANEOUS,
+                    MiscInstruction::SetEchoDelay.as_u8(),
+                    length.to_edl().as_u8()
+                );
+                Ok(())
+            }
+        }
+    }
+    pub fn keyon_next_note(&mut self) {
+        self.state.prev_slurred_note = SlurredNoteState::None;
+        emit_bytecode!(self, opcodes::KEYON_NEXT_NOTE);
+    }
+}

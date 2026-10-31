@@ -1,0 +1,12 @@
+[package]
+name = "spc700asm"
+license = "MIT"
+edition = "2021"
+publish = false
+version = "0.0.0"
+
+[dependencies]
+bitflags = { "version" = "2.10.0" }
+clap = { "version" = "4.5.16", "features" = ["derive"] }
+anstyle = { "version" = "1.0.13" }
+anstream = { "version" = "1.0.0" }

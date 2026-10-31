@@ -1,0 +1,594 @@
+{
+  "schema": 1,
+  "backend": "tad",
+  "source": {
+    "file": "MIDDATA.MLK",
+    "bytes": 193895,
+    "sha256": "256df7f472c5032df293e2b7e434b8ca3c79539799910af547588373d71eb6eb"
+  },
+  "tad_revision": "2e453503ad0e16cec9af3ba23cd7a43eee23f61e",
+  "modules": {
+    "loader.bin": "fcc4d1be06563d1ab85fb7220afacb5ecbe800701cee50924acde682254ec895",
+    "audio-driver.bin": "c957c9d3c4d5b94d5af3967f6456bb8aeaefb138e42ea8f4f9c99ab9f5eae098"
+  },
+  "songs": [
+    {
+      "name": "00-opening-2",
+      "source_index": 0,
+      "looping": true,
+      "seconds": 80.58,
+      "common": {
+        "file": "00-opening-2.common",
+        "bytes": 27410,
+        "sha256": "082f880fc7df5fd9579f4983c3bdc6fad0b610163f2e99ed379a6f5b50c5c2ac"
+      },
+      "song": {
+        "file": "00-opening-2.song",
+        "bytes": 5425,
+        "sha256": "67053825ab85970e93954dbb9d5cbcd47822afa3254c7e9606c15f404e0d0cde"
+      },
+      "song_start": 31588,
+      "echo_start": 53248,
+      "spc_sha256": "18aadc04d525e823c2f27031212becc66c6b1337d07c571d8a00312b008c9c75"
+    },
+    {
+      "name": "01-title",
+      "source_index": 1,
+      "looping": true,
+      "seconds": 60.464999999999996,
+      "common": {
+        "file": "01-title.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "01-title.song",
+        "bytes": 5869,
+        "sha256": "5bfb3bd1ef7f895589e3c96ef8017623d050e884ff9656ea896aee7b2acd830a"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "ea103f0dfd2e2ed269cacb82289c4f9e06fcd81789d9c14c4c813b034b361656"
+    },
+    {
+      "name": "02-prologue-arle",
+      "source_index": 2,
+      "looping": true,
+      "seconds": 44.415,
+      "common": {
+        "file": "02-prologue-arle.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "02-prologue-arle.song",
+        "bytes": 2574,
+        "sha256": "7b2946ae7f54ee3becf187b60a5965370d3ebd555cc2e6417f2a66808bdaf5ec"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "2d020840373117fd4b74bbe686ba32d4ef5f8fe718c8a9a65f44e80458818e3c"
+    },
+    {
+      "name": "03-ending",
+      "source_index": 3,
+      "looping": true,
+      "seconds": 61.977000000000004,
+      "common": {
+        "file": "03-ending.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "03-ending.song",
+        "bytes": 6725,
+        "sha256": "0ebddace23b72625e85f8b23312f7a3dfa46a6be130b792dee5cbc661c925bdf"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "fb8950797e9225065c43548222341ed96c1c820e2b91d92b643bf6b9f79cb1fc"
+    },
+    {
+      "name": "04-labyrinth-intro",
+      "source_index": 4,
+      "looping": true,
+      "seconds": 48.99,
+      "common": {
+        "file": "04-labyrinth-intro.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "04-labyrinth-intro.song",
+        "bytes": 5638,
+        "sha256": "e3a8589eab9a7a040d905a18a8194268a64a759a6ff39c96507ddbd3a0cd84da"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "85460c1aa081c5590694d6f1505d5333ed2628250a5be424ddaa674e495c80d5"
+    },
+    {
+      "name": "05-try-out",
+      "source_index": 5,
+      "looping": true,
+      "seconds": 118.965,
+      "common": {
+        "file": "05-try-out.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "05-try-out.song",
+        "bytes": 6172,
+        "sha256": "24f27db3907144334ecf5c9468f067c07ab13c1a308a0dbaf6e74f521e1f9403"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "0460fcb4a3d7004cb057a6504fd5e18c25ef01f3b24e1cfa2014dd09e4998213"
+    },
+    {
+      "name": "06-b5-b7",
+      "source_index": 6,
+      "looping": true,
+      "seconds": 30.261000000000003,
+      "common": {
+        "file": "06-b5-b7.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "06-b5-b7.song",
+        "bytes": 2724,
+        "sha256": "7c895b24a38cb7f65d9621e301aee268a976b83e487d9d5c50201fd4c8af954e"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "ddd315b6c61db8b807cefd4b55cd97cb65dea35c371e589f9f304c3d3c6015a2"
+    },
+    {
+      "name": "07-phantom-zone",
+      "source_index": 7,
+      "looping": true,
+      "seconds": 60.144000000000005,
+      "common": {
+        "file": "07-phantom-zone.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "07-phantom-zone.song",
+        "bytes": 5330,
+        "sha256": "6a9075bc3be1c941c430f38c4a113afff14c3fdb6b3ca15e05a6b5cbe937ec89"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "29af2be8d37f660080b60c1744b0adc387eaa920a7c68e382d490d75dbfe52a7"
+    },
+    {
+      "name": "08-unused-8",
+      "source_index": 8,
+      "looping": true,
+      "seconds": 14.25,
+      "common": {
+        "file": "08-unused-8.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "08-unused-8.song",
+        "bytes": 366,
+        "sha256": "072ac034a364d0bbf790560359006e0bacb0aca59b2c5268ebf161f6db85cdca"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "1fd8dffe3028193d41a611c31744560080b25f516d635be187e4e57faaefe44f"
+    },
+    {
+      "name": "09-shop",
+      "source_index": 9,
+      "looping": true,
+      "seconds": 39.94375,
+      "common": {
+        "file": "09-shop.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "09-shop.song",
+        "bytes": 1903,
+        "sha256": "0b573e785c23510264ed3b827853c36094d5e9cd64ced15bb4d5a4eb69a0a2b5"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "8d2bd7ef012dd733f756e61cf386415ee1161aaad5e728c8681c9b599df01772"
+    },
+    {
+      "name": "10-event",
+      "source_index": 10,
+      "looping": true,
+      "seconds": 18.018,
+      "common": {
+        "file": "10-event.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "10-event.song",
+        "bytes": 1416,
+        "sha256": "52146f71587d13b1ebc0d5d5f649d9f218623c999067252fefa57c0ea15b4155"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "fff5c02b3f5621b7bd055dd9ad45ba356aea2f3daa52e05c52687812d0705e34"
+    },
+    {
+      "name": "11-ending-2",
+      "source_index": 11,
+      "looping": true,
+      "seconds": 91.57499999999999,
+      "common": {
+        "file": "11-ending-2.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "11-ending-2.song",
+        "bytes": 5244,
+        "sha256": "690b7c495200060f9af6f1ac84d0c6a1f3533f1df03f20bf086183ccf05fbec5"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "6ae6c83d334fe775754a76502064db606328e2117889047c38f879a51b1944d5"
+    },
+    {
+      "name": "12-battle",
+      "source_index": 12,
+      "looping": true,
+      "seconds": 15.708,
+      "common": {
+        "file": "12-battle.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "12-battle.song",
+        "bytes": 1555,
+        "sha256": "0bf5e75bb0aa1129b6de251144b4ccdda5176efbf7be6513b02e737bcaef85a9"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "d5b159817ccc52902435742731d50de181266a6ba19c6b6bacb79ef516c043b2"
+    },
+    {
+      "name": "13-battle",
+      "source_index": 13,
+      "looping": true,
+      "seconds": 28.86,
+      "common": {
+        "file": "13-battle.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "13-battle.song",
+        "bytes": 489,
+        "sha256": "b467ae5a6f34544dc81b446c64c8c80af9b2f00bafe4e5428e62506479016d7c"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "c3e322ef9b6e056dc7ebe59e972dfca99063c4b635faff87d0b9fa01f932ffd2"
+    },
+    {
+      "name": "14-ancient",
+      "source_index": 14,
+      "looping": true,
+      "seconds": 66.612,
+      "common": {
+        "file": "14-ancient.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "14-ancient.song",
+        "bytes": 2114,
+        "sha256": "503f20b63e6269f74edc2441dc8a4b6cd041c83159ed6a961cbfb04c5022e87b"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "937390116aceff16cb76a622b4b07d3fc677da3627a98bc2e1ef9d754b647cda"
+    },
+    {
+      "name": "15-guardian",
+      "source_index": 15,
+      "looping": true,
+      "seconds": 74.613,
+      "common": {
+        "file": "15-guardian.common",
+        "bytes": 30822,
+        "sha256": "7c625a5650082b7710d1a3f57d382a7eb23440ba280588df64a5c747a400eefe"
+      },
+      "song": {
+        "file": "15-guardian.song",
+        "bytes": 6075,
+        "sha256": "4758ef9b2cbad26a88408cf5a22b01e5fb20abf8c2eb7d961e3abbed13b4d7b0"
+      },
+      "song_start": 35000,
+      "echo_start": 53248,
+      "spc_sha256": "4c4245373f566bf432ec9e0afa3d62769e94e76a5e3ff77595d1d309248a9791"
+    },
+    {
+      "name": "16-rulue",
+      "source_index": 16,
+      "looping": true,
+      "seconds": 36.156000000000006,
+      "common": {
+        "file": "16-rulue.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "16-rulue.song",
+        "bytes": 2453,
+        "sha256": "c3b40ffdcddb80714d4bd09c9cb38ac0b557618f34d783a10f896009355fae25"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "bc866716f4f0e7d6f5dc02c7f501fb887924510c03de06a66b24d9ec92bcd99e"
+    },
+    {
+      "name": "17-battle",
+      "source_index": 17,
+      "looping": true,
+      "seconds": 45.426,
+      "common": {
+        "file": "17-battle.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "17-battle.song",
+        "bytes": 815,
+        "sha256": "dbc5fb31957f5cef184eb50d1e1015b7468694108b2d9238bf92d9ccf5b4581f"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "e688b7ea54cb33ea8027b587f3c7619fa3dc58045c2f1d1894b22babac9cb428"
+    },
+    {
+      "name": "18-final-boss",
+      "source_index": 18,
+      "looping": true,
+      "seconds": 90.09,
+      "common": {
+        "file": "18-final-boss.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "18-final-boss.song",
+        "bytes": 1335,
+        "sha256": "48735cfd1669448f21ebe03a962d830a10599d7dd0e3078a040fd7b237e17864"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "4df5f638ffc6ca87017d1ac1aacacf89241ed4a45c1ea92721ed2280fa88ebc7"
+    },
+    {
+      "name": "19-event-item",
+      "source_index": 19,
+      "looping": false,
+      "seconds": 7.875,
+      "common": {
+        "file": "19-event-item.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "19-event-item.song",
+        "bytes": 365,
+        "sha256": "4aab091959ab3345a730dafd3cb71e4138852b661fc3b7864fdaf353bf18386b"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "02b5c2030d29cf434ab52f49297b14625dd31a1c1f97aeb80e32211662a082c4"
+    },
+    {
+      "name": "20-item",
+      "source_index": 20,
+      "looping": false,
+      "seconds": 2.0945,
+      "common": {
+        "file": "20-item.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "20-item.song",
+        "bytes": 311,
+        "sha256": "a969c816b6aa8a81711eb33a2e33521301338e7db81dc1543d2447b32352f92d"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "4bcf57c23bf0e5ca2d7bb04b6f48b8b265a5ff3a2975d42037ebcf7d3fbbfad4"
+    },
+    {
+      "name": "21-monster",
+      "source_index": 21,
+      "looping": false,
+      "seconds": 2.875,
+      "common": {
+        "file": "21-monster.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "21-monster.song",
+        "bytes": 201,
+        "sha256": "1a4d0144a97231010ee0339b925a183be5949953a329fac9e9e4d18e77fd537f"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "0c0d724246a0811ab3ad3b60e0161d883693256422acebe5eb67c93ee94ff815"
+    },
+    {
+      "name": "22-level-up",
+      "source_index": 22,
+      "looping": false,
+      "seconds": 2.43425,
+      "common": {
+        "file": "22-level-up.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "22-level-up.song",
+        "bytes": 556,
+        "sha256": "fd25d674a6b120ae6a53f1a14bab25c570d3f328a3e0436a4ac964d5df1f0f64"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "b1187694fc3011e956d27e16034506582b1c32cd79c5d46d03114494631a8dc3"
+    },
+    {
+      "name": "23-victory",
+      "source_index": 23,
+      "looping": false,
+      "seconds": 1.947,
+      "common": {
+        "file": "23-victory.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "23-victory.song",
+        "bytes": 231,
+        "sha256": "f16f62eaf88829d860c0b604a8c49a5f0de67d1304c6f76558da1ecd43319c1b"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "80b948db6ef1125c31fc5648ed61afc982a05f9bdcce7303a984d49ed733920b"
+    },
+    {
+      "name": "24-defeat",
+      "source_index": 24,
+      "looping": false,
+      "seconds": 2.9625,
+      "common": {
+        "file": "24-defeat.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "24-defeat.song",
+        "bytes": 220,
+        "sha256": "2cb877c79a34383594e722f6ebb5718f9f054d37afedba158e36755bb09df742"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "685020d099f0f0d681ad76752e76fa083943728efb994a6015d031eb75acb591"
+    },
+    {
+      "name": "25-crystal",
+      "source_index": 25,
+      "looping": false,
+      "seconds": 2.158,
+      "common": {
+        "file": "25-crystal.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "25-crystal.song",
+        "bytes": 49,
+        "sha256": "3a6d297933a4bb49c1f4a117cb4b0674fa52de62dc6fa842fbddf339d414f12b"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "898214a8f6b3d7c1d480d1a38d77a2263fc3438086d3cabbaef54d6a29addb54"
+    },
+    {
+      "name": "26-panotti",
+      "source_index": 26,
+      "looping": false,
+      "seconds": 1.6685,
+      "common": {
+        "file": "26-panotti.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "26-panotti.song",
+        "bytes": 70,
+        "sha256": "a879c64353a8e6aeeac633e3995b917f5ba3cd53f6949037d387da9df6acead0"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "027ef42c03e69974f09f9a0e587f99c4fd8fc0aab458455daa6956c3db91a39f"
+    },
+    {
+      "name": "27-unknown-27",
+      "source_index": 27,
+      "looping": true,
+      "seconds": 4.698,
+      "common": {
+        "file": "27-unknown-27.common",
+        "bytes": 26672,
+        "sha256": "7d78a2a74be36c2d9311a5f0fd0a624687c3cdf6b5fcdc84d47f0d053941b50c"
+      },
+      "song": {
+        "file": "27-unknown-27.song",
+        "bytes": 911,
+        "sha256": "77274dec0a628fabdb643565d59d2c95f189772358191019a789450156a8113a"
+      },
+      "song_start": 30850,
+      "echo_start": 53248,
+      "spc_sha256": "1e7bbe797d4b5eee1adb06170c5d903342609560c51451375de3c263ce5a3c26"
+    }
+  ],
+  "modified_upstream": true,
+  "tad_io_version": 23,
+  "live_transfer_bytes": 96,
+  "instrument_banks": [
+    [
+      "01-title",
+      "02-prologue-arle",
+      "03-ending",
+      "04-labyrinth-intro",
+      "05-try-out",
+      "06-b5-b7",
+      "07-phantom-zone",
+      "08-unused-8",
+      "09-shop",
+      "10-event",
+      "11-ending-2",
+      "12-battle",
+      "13-battle",
+      "14-ancient",
+      "16-rulue",
+      "17-battle",
+      "18-final-boss",
+      "19-event-item",
+      "20-item",
+      "21-monster",
+      "22-level-up",
+      "23-victory",
+      "24-defeat",
+      "25-crystal",
+      "26-panotti",
+      "27-unknown-27"
+    ],
+    [
+      "00-opening-2"
+    ],
+    [
+      "15-guardian"
+    ]
+  ],
+  "sample_rate": 5000,
+  "sample_rates": [
+    5000,
+    8125,
+    11025,
+    16250
+  ]
+}

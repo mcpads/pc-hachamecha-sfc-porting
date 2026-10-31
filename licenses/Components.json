@@ -1,0 +1,24 @@
+{
+  "asset-types": {
+    "revision": "df91858cc2d630eb5ad29d3b25fb242ad27b9e27",
+    "subset": true
+  },
+  "sfc-codecs": {
+    "revision": "df91858cc2d630eb5ad29d3b25fb242ad27b9e27",
+    "subset": true
+  },
+  "sfc-builder": {
+    "revision": "4871594b3731aa495381de2bcef00f75328a0368",
+    "subset": true
+  },
+  "typed-isa-core": {
+    "revision": "6955631faa610c39fc061c1dcbb11ed5a52bfef6",
+    "subset": false,
+    "source": "https://github.com/mcpads/retro-typed-isa"
+  },
+  "w65c816": {
+    "revision": "6955631faa610c39fc061c1dcbb11ed5a52bfef6",
+    "subset": false,
+    "source": "https://github.com/mcpads/retro-typed-isa"
+  }
+}

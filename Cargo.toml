@@ -1,0 +1,7 @@
+[workspace]
+resolver = "3"
+members = ["port-build", "port-input", "crates/*"]
+exclude = ["tad"]
+
+[workspace.dependencies]
+w65c816 = { git = "https://github.com/mcpads/retro-typed-isa.git", rev = "6955631faa610c39fc061c1dcbb11ed5a52bfef6" }

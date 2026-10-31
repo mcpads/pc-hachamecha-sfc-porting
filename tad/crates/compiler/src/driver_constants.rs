@@ -1,0 +1,208 @@
+#![allow(clippy::assertions_on_constants)]
+pub const AUDIO_RAM_SIZE: usize = 0x10000;
+mod _symbols {
+    include!(concat!(env!("OUT_DIR"), "/symbols.rs"));
+}
+pub mod addresses {
+    use super::_symbols;
+    use std::ops::Range;
+    macro_rules! declare_symbols {
+        ($($name:ident,)*) => {
+            $(pub const $name : u16 = _symbols::$name;)*
+        };
+    }
+    declare_symbols!(
+        DRIVER_CODE,
+        MAINLOOP_CODE,
+        PROCESS_MUSIC_CHANNELS_CODE,
+        LOADER,
+        SONG_PTR,
+        LOADER_DATA_TYPE,
+        KEYON_SHADOW_MUSIC,
+        KEYOFF_SHADOW_MUSIC,
+        KEYON_MASK_MUSIC,
+        PMON_SHADOW,
+        EON_SHADOW_MUSIC,
+        EON_SHADOW_SFX,
+        LAG_DETECTOR,
+        SONG_TICK_COUNTER,
+        IO_MUSIC_CHANNELS_MASK,
+        BYTECODE_STACK,
+        VOICE_CHANNELS_DIRTY_MUSIC,
+        CHANNEL_VC_VOL_L,
+        CHANNEL_VC_VOL_R,
+        CHANNEL_VC_PITCH_L,
+        CHANNEL_VC_PITCH_H,
+        CHANNEL_VC_SRCN,
+        CHANNEL_VC_ADSR1,
+        CHANNEL_VC_ADSR2_OR_GAIN,
+        CHANNEL_VC_TEMP_GAIN,
+        CHANNEL_COUNTDOWN_TIMER_L,
+        CHANNEL_COUNTDOWN_TIMER_H,
+        CHANNEL_INSTRUCTION_PTR_L,
+        CHANNEL_INSTRUCTION_PTR_H,
+        CHANNEL_STACK_POINTER,
+        CHANNEL_LOOP_STACK_POINTER,
+        CHANNEL_KEYOFF_MSB_FLAG,
+        CHANNEL_DIRECTION,
+        CHANNEL_VIBRATO_PITCH_OFFSET_PER_TICK,
+        CHANNEL_VIBRATO_DELAY,
+        CHANNEL_VIBRATO_DIRECTION,
+        CHANNEL_VIBRATO_TICK_COUNTER,
+        CHANNEL_VIBRATO_TICK_COUNTER_START,
+        CHANNEL_VIBRATO_HALF_WAVELENGTH,
+        CHANNEL_PREV_TEMP_GAIN,
+        CHANNEL_EARLY_RELEASE_CMP,
+        CHANNEL_EARLY_RELEASE_MIN_TICKS,
+        CHANNEL_EARLY_RELEASE_GAIN,
+        CHANNEL_TRANSPOSE,
+        CHANNEL_DETUNE_L,
+        CHANNEL_DETUNE_H,
+        CHANNEL_VOLUME,
+        CHANNEL_SUB_VOLUME,
+        CHANNEL_VOL_EFFECT_DIRECTION,
+        CHANNEL_VOL_EFFECT_OFFSET_L,
+        CHANNEL_VOL_EFFECT_OFFSET_H,
+        CHANNEL_VOL_EFFECT_COUNTER,
+        CHANNEL_VOL_EFFECT_HALF_WAVELENGTH,
+        CHANNEL_PAN,
+        CHANNEL_SUB_PAN,
+        CHANNEL_PAN_EFFECT_DIRECTION,
+        CHANNEL_PAN_EFFECT_OFFSET_L,
+        CHANNEL_PAN_EFFECT_OFFSET_H,
+        CHANNEL_PAN_EFFECT_COUNTER,
+        CHANNEL_PAN_EFFECT_HALF_WAVELENGTH,
+        CHANNEL_INVERT_FLAGS,
+        SONG_GLOBAL_VARIABLES,
+        COMMON_DATA_POINTERS,
+        SONG_GLOBALS_DIRTY,
+        MAX_EDL,
+        MAIN_CLEAR_ECHO_BUFFER_START,
+        MAIN_CLEAR_ECHO_BUFFER_END,
+        GLOBAL_VOLUME_MUSIC,
+        GLOBAL_VOLUME_SFX,
+    );
+    pub const COMMON_DATA: u16 = _symbols::COMMON_DATA_ADDR;
+    const _: () = assert!(
+        _symbols::_LOADER_END_ADDR == DRIVER_CODE,
+        "Loader is not direct before driver code"
+    );
+    const _: () = assert!(
+        LOADER + (crate::audio_driver::LOADER.len() as u16) == DRIVER_CODE,
+        "Audio-driver is not directly after Loader"
+    );
+    const _: () = assert!(
+        COMMON_DATA > _symbols::_DRIVER_END_ADDR && COMMON_DATA > _symbols::_LOADER_END_ADDR,
+        "Invalid COMMON_DATA address"
+    );
+    const _: () = assert!(
+        DRIVER_CODE % 2 == 0,
+        "Loader requires an even DRIVER_CODE address"
+    );
+    const _: () = assert!(
+        COMMON_DATA % 2 == 0,
+        "Loader requires an even COMMON_DATA address"
+    );
+    const _: () = assert!(
+        (COMMON_DATA as usize + super::COMMON_DATA_HEADER_SIZE) & 0xff == 0,
+        "BRR directory is not page aligned"
+    );
+    const _: () = assert!(MAIN_CLEAR_ECHO_BUFFER_START > DRIVER_CODE);
+    const _: () = assert!(MAIN_CLEAR_ECHO_BUFFER_END < MAINLOOP_CODE);
+    const _: () = assert!(MAIN_CLEAR_ECHO_BUFFER_END > MAIN_CLEAR_ECHO_BUFFER_START);
+    const _: () = assert!(
+        MAINLOOP_CODE < PROCESS_MUSIC_CHANNELS_CODE,
+        "mainloop() must be before process_music_channels()"
+    );
+    pub const MAIN_LOOP_CODE_RANGE: Range<u16> = MAINLOOP_CODE..PROCESS_MUSIC_CHANNELS_CODE;
+}
+pub const SONG_GLOBALS_SIZE: usize =
+    (addresses::COMMON_DATA_POINTERS - addresses::SONG_GLOBAL_VARIABLES) as usize;
+pub const TAD_IO_VERSION: u16 = _symbols::TAD_IO_VERSION;
+pub const N_MUSIC_CHANNELS: usize = 8;
+pub const N_SFX_CHANNELS: usize = 2;
+pub const N_CHANNELS: usize = N_MUSIC_CHANNELS + N_SFX_CHANNELS;
+pub const FIRST_SFX_CHANNEL: usize = N_MUSIC_CHANNELS;
+pub const N_DSP_VOICES: usize = 8;
+pub const BC_CHANNEL_STACK_SIZE: usize = 21;
+pub const BC_CHANNEL_STACK_OFFSET: usize = 6;
+pub const BC_TOTAL_STACK_SIZE: usize = BC_CHANNEL_STACK_SIZE * N_CHANNELS;
+pub const BC_STACK_BYTES_PER_LOOP: usize = 3;
+pub const BC_STACK_BYTES_PER_SUBROUTINE_CALL: usize = 2;
+const _: () =
+    assert!(BC_TOTAL_STACK_SIZE + BC_CHANNEL_STACK_OFFSET + BC_STACK_BYTES_PER_LOOP < 0xff);
+pub const FIRST_SONG_ID: usize = 1;
+pub const MAX_N_SONGS: usize = 0x100 - FIRST_SONG_ID;
+pub const MAX_DIR_ITEMS: usize = u8::MAX as usize;
+pub const MAX_BRR_SAMPLES: usize = u8::MAX as usize;
+pub const MAX_SOUND_EFFECTS: usize = 254;
+pub const COMMON_DATA_POINTERS_SIZE: usize = 10 * 2;
+pub const COMMON_DATA_HEADER_SIZE: usize = COMMON_DATA_POINTERS_SIZE + 4;
+pub const COMMON_DATA_PITCH_TABLE_OFFSET: usize = 20;
+pub const COMMON_DATA_DIR_TABLE_OFFSET: usize = COMMON_DATA_HEADER_SIZE;
+pub const COMMON_DATA_BYTES_PER_DIR: usize = 4;
+pub const COMMON_DATA_BYTES_PER_PITCH: usize = 2;
+pub const COMMON_DATA_BYTES_PER_INSTRUMENT: usize = 4;
+pub const COMMON_DATA_BYTES_PER_SOUND_EFFECT: usize = 4;
+pub const COMMON_DATA_BYTES_PER_SFX_SUBROUTINE: usize = 2;
+pub const MAX_SFX_DATA_ADDR: usize = 0x7fff;
+pub const MAX_COMMON_DATA_SIZE: usize = AUDIO_RAM_SIZE - (addresses::COMMON_DATA as usize) - 384;
+#[derive(Debug, Clone, Copy)]
+pub enum AudioMode {
+    Mono,
+    Stereo,
+    Surround,
+}
+pub struct LoaderDataType {
+    pub audio_mode: AudioMode,
+    pub play_song: bool,
+    pub reset_global_volumes: bool,
+}
+impl LoaderDataType {
+    pub fn driver_value(&self) -> u8 {
+        const _: () = assert!(TAD_IO_VERSION == 23);
+        let mut o = 1 << 7;
+        o |= match self.audio_mode {
+            AudioMode::Mono => 1,
+            AudioMode::Stereo => 2,
+            AudioMode::Surround => 3,
+        };
+        if self.play_song {
+            o |= 1 << 6;
+        }
+        if self.reset_global_volumes {
+            o |= 1 << 5;
+        }
+        o
+    }
+}
+pub const S_SMP_TIMER_0_REGISTER: u8 = 0xfa;
+pub const FIR_FILTER_SIZE: usize = 8;
+pub const ECHO_BUFFER_EDL_MS: u32 = 16;
+pub const ECHO_BUFFER_EDL_SIZE: usize = 2048;
+pub const ECHO_BUFFER_MIN_SIZE: usize = 256;
+pub const ECHO_BUFFER_MAX_EDL: u8 = 15;
+pub const MAX_SUBROUTINES: usize = 255;
+pub const MAX_SFX_SUBROUTINES: u8 = 255;
+pub(crate) const BLANK_SONG_BIN: [u8; 1] = [0];
+pub const SONG_HEADER_SIZE: usize = 17;
+pub const SONG_HEADER_ACTIVE_MUSIC_CHANNELS: usize = 0;
+pub const SONG_HEADER_GLOBALS: usize = 1;
+pub const SONG_HEADER_ECHO_EDL: usize = 1;
+pub const SONG_HEADER_MAIN_VOLUME: usize = SONG_HEADER_GLOBALS + 10;
+pub const SONG_HEADER_TICK_TIMER_OFFSET: usize = SONG_HEADER_SIZE - 2;
+pub const SONG_HEADER_N_SUBROUTINES_OFFSET: usize = SONG_HEADER_SIZE - 1;
+pub const MAX_SONG_DATA_SIZE: usize = 0xD000;
+pub const STARTING_VOLUME: u8 = 96;
+pub const SFX_TICK_CLOCK: u8 = 64;
+const _: () = assert!(TAD_IO_VERSION == 23);
+pub mod io_commands {
+    pub const PAUSE: u8 = 0;
+    pub const UNPAUSE: u8 = 4;
+    pub const PLAY_SOUND_EFFECT: u8 = 6;
+    pub const STOP_SOUND_EFFECTS: u8 = 8;
+}
+pub const IO_COMMAND_MASK: u8 = 0b00011110;
+pub const IO_COMMAND_I_MASK: u8 = 0b11100001;
+pub const LAG_DETECTOR_MUSIC_LAG_MASK: u8 = 1 << 0;
+pub const LAG_DETECTOR_SFX_LAG_MASK: u8 = 1 << 1;

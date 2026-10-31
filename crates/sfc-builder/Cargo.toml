@@ -1,0 +1,12 @@
+[package]
+name = "sfc-builder"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+w65c816 = { workspace = true }
+asset-types = { "path" = "../asset-types" }
+sfc-codecs = { "path" = "../sfc-codecs" }
+serde_json = "1"
+sha2 = "0.11"

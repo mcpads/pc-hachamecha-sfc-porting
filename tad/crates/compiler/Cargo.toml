@@ -1,0 +1,19 @@
+[package]
+name = "compiler"
+license = "MIT"
+edition = "2021"
+publish = false
+version = "0.0.0"
+
+[dependencies]
+brr = { "path" = "../brr" }
+serde = { "version" = "1.0.164", "features" = ["derive"] }
+serde_json = { "version" = "1.0.97" }
+relative-path = { "version" = "2.0.1", "features" = ["serde"] }
+
+[build-dependencies]
+spc700asm = { "path" = "../spc700asm" }
+
+[features]
+default = []
+test = []

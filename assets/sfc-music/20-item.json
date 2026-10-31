@@ -1,0 +1,1 @@
+{"source":{"index":20},"offset_ticks":7,"whole_bars":false,"loop":false,"tracks":[{"name":"lead 1","role":"lead","channels":[1],"volume":31},{"name":"lead 2","role":"lead","channels":[2],"volume":31},{"name":"echo 1","role":"echo","volume":18,"pan":40,"copy_of":"lead 1","delay":24},{"name":"echo 2","role":"echo","volume":18,"pan":-40,"copy_of":"lead 2","delay":24}]}
