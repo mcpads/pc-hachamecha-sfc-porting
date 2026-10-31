@@ -2,13 +2,15 @@
 
 한국판 디스크스테이션 1호의 《마도전기 엉망진창 기말고사》를 슈퍼패미컴(SFC)에서 플레이할 수 있도록 변환하는 웹 패쳐입니다. 한국어 대사와 음성을 포함합니다.
 
+![타이틀 화면](images/title.png)
+
 ## 지원 원본
 
 한국판 디스크스테이션 1호의 《마도전기 엉망진창 기말고사》 게임 폴더 전체가 필요합니다.
 
 ## 적용 방법
 
-웹 패쳐는 [hachamecha.retrogame.cloud](https://hachamecha.retrogame.cloud/)에 공개할 예정입니다.
+웹 패쳐: [hachamecha.retrogame.cloud](https://hachamecha.retrogame.cloud/)
 
 1. 마도전기 엉망진창 기말고사 게임 폴더 전체를 ZIP으로 압축합니다. 이미 ZIP으로 가지고 있다면 그대로 사용해도 됩니다.
 2. 웹 패쳐에서 **ZIP 파일 선택**을 눌러 원본 ZIP을 선택합니다.
