@@ -179,6 +179,7 @@ pub(super) fn emit_pool(p: &mut Assembler, zero: u32) {
     ax(p, M::Lda, 0x0c);
     abs(p, M::Sta, FREE);
     ax(p, M::Stz, 0x0c);
+    crate::sfc_battle_display::emit_forget_object_pose(p);
     dp(p, M::Lda, COUNT);
     ax(p, M::Sta, 0x1a);
     for _ in 0..5 {

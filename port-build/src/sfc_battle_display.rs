@@ -131,6 +131,21 @@ const FIND_ONLY: u16 = 0xdd0;
 const MISSED: u16 = 0xdd1;
 const CHUNK_ATTRIBUTE: u16 = 0xe0c;
 const LAST_DRAWN: u32 = 0x7f8000;
+
+pub(crate) fn emit_forget_object_pose(p: &mut Assembler) {
+    implied(p, M::Phx);
+    implied(p, M::Txa);
+    implied(p, M::Sec);
+    word(p, M::Sbc, crate::sfc_battle_objects::POOL);
+    for _ in 0..3 {
+        emit(p, M::Lsr, A::Accumulator, O::None);
+    }
+    implied(p, M::Tax);
+    word(p, M::Lda, 0);
+    emit(p, M::Sta, A::AbsoluteLongX, O::Long(LAST_DRAWN + 2));
+    implied(p, M::Plx);
+}
+
 pub(crate) const ARLE_BANK: u16 = 0xdd4;
 const ARLE_BASE: u16 = 0xdd6;
 const CHUNK_NAMES: u16 = 0xdd8;

@@ -239,6 +239,19 @@ pub(super) fn emit_draw(
         .assume_mode(CpuMode::NATIVE_M16_X16);
     long_x(p, M::Lda, LAST_DRAWN);
     abs(p, M::Sta, SHEET_FRAME);
+    for (offset, origin) in [
+        (4, ORIGIN_X),
+        (6, ORIGIN_Y),
+        (8, PANEL_LEFT),
+        (10, PANEL_RIGHT),
+    ] {
+        long_x(p, M::Lda, LAST_DRAWN + offset);
+        if offset < 8 {
+            implied(p, M::Clc);
+            word(p, M::Adc, 128);
+        }
+        abs(p, M::Sta, origin);
+    }
     jsr(p, "bdo_record");
     p.assume_mode(CpuMode::NATIVE_M8_X16);
     br(p, M::Bra, "bdo_sprite_draw");
@@ -250,6 +263,19 @@ pub(super) fn emit_draw(
     abs(p, M::Lda, RESOURCE);
     emit(p, M::Inc, A::Accumulator, O::None);
     long_x(p, M::Sta, LAST_DRAWN + 2);
+    for (offset, origin) in [
+        (4, ORIGIN_X),
+        (6, ORIGIN_Y),
+        (8, PANEL_LEFT),
+        (10, PANEL_RIGHT),
+    ] {
+        abs(p, M::Lda, origin);
+        if offset < 8 {
+            implied(p, M::Sec);
+            word(p, M::Sbc, 128);
+        }
+        long_x(p, M::Sta, LAST_DRAWN + offset);
+    }
     m8(p);
     p.label("bdo_sprite_draw")
         .assume_mode(CpuMode::NATIVE_M8_X16);

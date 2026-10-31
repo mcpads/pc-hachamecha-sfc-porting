@@ -125,6 +125,14 @@ pub fn place_code(sections: &mut [Section], layout: &CartridgeLayout) -> Result<
     dp(p, M::Lda, RESOURCE);
     emit(p, M::Inc, A::Accumulator, O::None);
     long_x(p, M::Sta, LAST_DRAWN + 2);
+    for (offset, origin) in [(4, ORIGIN_X), (6, ORIGIN_Y)] {
+        dp(p, M::Lda, origin);
+        long_x(p, M::Sta, LAST_DRAWN + offset);
+    }
+    for (offset, bound) in [(8, PANEL_LEFT), (10, PANEL_RIGHT)] {
+        dp(p, M::Lda, bound);
+        long_x(p, M::Sta, LAST_DRAWN + offset);
+    }
     dp(p, M::Lda, ENTRY);
     word(p, M::Cmp, 512);
     branch(p, M::Bcs, "clipped");
